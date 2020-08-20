@@ -35,7 +35,7 @@ def generate_midifile_from_frames(framesfolder_name="frames", output_midifile_na
     for frame_index, frame_name in enumerate(os.listdir(PATH_FRAMES)):
 
         frame_note = (frame_index % 88) + 20
-        
+
         past_color_column_list = [None] * FRAME_SIZE[0]
         rows_without_changes = last_empty_rows_from_last_frame
 
@@ -47,9 +47,9 @@ def generate_midifile_from_frames(framesfolder_name="frames", output_midifile_na
         delta_ticks = 0
 
         # i want 1 more, so i can close notes that end in the last pixel
-        for y in range(FRAME_SIZE[1]+1):      
+        for y in range(FRAME_SIZE[1]+1):
 
-            
+
             if y != FRAME_SIZE[1]:
                 rows_without_changes += 1
             delta_ticks = int(rows_without_changes*PIXEL_AS_TICKS)
@@ -66,7 +66,7 @@ def generate_midifile_from_frames(framesfolder_name="frames", output_midifile_na
                 else:
                     r, g, b = pix[x, FRAME_SIZE[1] - y - 1]
                     grey = r * 0.3 + g * 0.59 + b * 0.11
-                    
+
                     # if r > 100:
                     #     if g > 100:
                     #         pixel_color = 3
@@ -79,11 +79,11 @@ def generate_midifile_from_frames(framesfolder_name="frames", output_midifile_na
                     # else:
                     #     pixel_color = None
 
-                    
+
                     if grey < 50:
-                    	pixel_color = None
+                        pixel_color = None
                     elif grey < 100:
-                    	pixel_color = 0
+                        pixel_color = 0
                     elif grey < 150:
                         pixel_color = 1
                     elif grey < 200:
@@ -97,11 +97,11 @@ def generate_midifile_from_frames(framesfolder_name="frames", output_midifile_na
 
                     if pixel_color == None:
                         events_for_this_row.append([last_pixel_color, "note_off", note, DEFAULT_VELOCITY])
-                    else:                     
+                    else:
                         events_for_this_row.append([pixel_color, "note_on", note, DEFAULT_VELOCITY])
                         if last_pixel_color != None:
-                        	events_for_this_row.append([last_pixel_color, "note_off", note, DEFAULT_VELOCITY])
-                    past_color_column_list[x] = pixel_color 
+                            events_for_this_row.append([last_pixel_color, "note_off", note, DEFAULT_VELOCITY])
+                    past_color_column_list[x] = pixel_color
 
             # end for x
             for event in events_for_this_row:

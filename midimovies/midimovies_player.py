@@ -1,6 +1,6 @@
 import os
 import mido
-import mido.backends.rtmidi #explicit import for when building the .exe 
+import mido.backends.rtmidi #explicit import for when building the .exe
 import pygame
 import pygame.freetype  # Import the freetype module.
 import math
@@ -24,13 +24,13 @@ def start(midifile_name="output.mid"):
 
     timer = 0
     # formatea la data midi a algo con menos cancer. para que cada nota tenga su start y end
-    for msg in mid: 
+    for msg in mid:
         # print(msg)
         if not isinstance(msg, mido.MetaMessage):
             # msg.time come as seconds
             # timer += mido.second2tick(msg.time, mid.ticks_per_beat, 500000)
             timer += msg.time
-            
+
             # print(timer)
             if(msg.type == "note_on"):
                 # print(f"save time on channel {msg.channel}:{msg.note} = {timer}")
@@ -38,10 +38,10 @@ def start(midifile_name="output.mid"):
             elif(msg.type == 'note_off'):
                 start = start_times[msg.channel][msg.note]
                 end = timer
-                data = [msg.channel, msg.note, start, end, False, False]       
+                data = [msg.channel, msg.note, start, end, False, False]
                 # print(data)
                 song.append(data)
-            
+
 
     # for s in song:
     #     print(s)
@@ -84,7 +84,7 @@ def start(midifile_name="output.mid"):
     TOTAL_FRAMES = math.ceil(mid.length / FRAMEHEIGHT_AS_SECONDS)
 
     TOTAL_CHANNELS = len(COLOR_CHANNELS)
-    
+
     channels_notes_isplaying = []
     for i in range(TOTAL_CHANNELS):
         temp_notes_state = []
@@ -130,7 +130,7 @@ def start(midifile_name="output.mid"):
                 pygame.draw.rect(screen, COLOR_CHANNELS[note[0]], (x, y, w, h), 0)
 
             # sound
-            if True: 
+            if True:
                 if note[4] == False:
                     if start < scroller_y+SOUND_TRIGGER_ZONE:
                         note[4] = True
@@ -148,7 +148,7 @@ def start(midifile_name="output.mid"):
                     note[5] = False
 
         for piano_key in range(TOTAL_NOTES):
-            color = None  
+            color = None
             for channel_index in range(TOTAL_CHANNELS):
                 current_channel = channels_notes_isplaying[channel_index]
                 if current_channel[piano_key] == True:
@@ -159,8 +159,8 @@ def start(midifile_name="output.mid"):
                 else:
                     color = COLOR_WHITE
             pygame.draw.rect(screen, color, ((piano_key-MIDINOTE_OFFSET)*(BARGFX_WIDTH + BARGFX_MARGIN), WINDOW_HEIGHT-SOUND_TRIGGER_ZONE, BARGFX_WIDTH, SOUND_TRIGGER_ZONE), 0)
-        
-        
+
+
         mouse_x, mouse_y = pygame.mouse.get_pos()
         # scroller_y += ((mouse_y- WINDOW_HEIGHT/2)/WINDOW_HEIGHT/2)*50
         speed = WINDOW_HEIGHT*(mouse_y/WINDOW_HEIGHT)*1.01
@@ -173,7 +173,7 @@ def start(midifile_name="output.mid"):
             scroller_y = 0
         elif scroller_y < 0:
             scroller_y = WINDOW_HEIGHT*TOTAL_FRAMES
-        
+
 
         pygame.draw.line(screen, COLOR_WHITE, (0, WINDOW_HEIGHT-SOUND_TRIGGER_ZONE), (WINDOW_WIDTH, WINDOW_HEIGHT-SOUND_TRIGGER_ZONE), 2)
 

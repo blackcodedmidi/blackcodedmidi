@@ -25,9 +25,7 @@ def loopy_index(array, index):
 
 
 def start(midifile_name="output.mid", output_device=None):
-
     BEATS_PER_FRAME = 1
-
     TOTAL_NOTES = 127
 
     # Open the first output, by default

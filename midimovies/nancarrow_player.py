@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+import argparse
 import math
 import os
 
@@ -16,13 +18,18 @@ OPTIONS_SAVEFRAMES = False
 # ------------------------------------------------------------------------
 # ------------------------- PLAYER ---------------------------------------
 # ------------------------------------------------------------------------
-def start(midifile_name="output.mid"):
-
+def start(midifile_name="output.mid", output_device=None):
     BEATS_PER_FRAME = 1
-
     TOTAL_NOTES = 127
 
-    _midiport_ = mido.open_output('OmniMIDI 1')
+    # Open the first output, by default
+    if not output_device:
+        outputs = mido.get_output_names()
+        print("Outputs:", outputs)
+        output_device = outputs[0]
+
+    print("MIDI output:", output_device)
+    _midiport_ = mido.open_output(output_device)
 
     mid = mido.MidiFile(midifile_name)
     song = []
@@ -239,12 +246,21 @@ def start(midifile_name="output.mid"):
 
 # /////////////////////////////////////////////
 
+
 # ----------------------------------------------------------
 # ------------------------- MAIN ---------------------------
 # ----------------------------------------------------------
+def main():
+    parser = argparse.ArgumentParser(description='Plays a MIDI file.')
+    parser.add_argument('input', help='a MIDI file')
+    parser.add_argument('--output-device',
+                        '-o',
+                        default=None,
+                        help='MIDI output device (default: use the first one)')
+
+    args = parser.parse_args()
+    start(args.input, output_device=args.output_device)
+
+
 if __name__ == "__main__":
-    try:
-        midifile_name = sys.argv[1]
-    except:
-        midifile_name = "output.mid"
-    start(midifile_name)
+    main()

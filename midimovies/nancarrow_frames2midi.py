@@ -4,18 +4,15 @@ import sys
 from PIL import Image
 
 import mido
-import nancarrow_player
 
 
 # ------------------------------------------------------------------------
 # ------------------------- GENERATE MIDI --------------------------------
 # ------------------------------------------------------------------------
-def generate_midifile_from_frames(framesfolder_name="greytest",
-                                  output_midifile_name="output"):
-
+def generate_midifile_from_frames(frames_dir, output_path):
     BEATS_PER_FRAME = 1
 
-    PATH_FRAMES = os.getcwd() + f"/{framesfolder_name}/"
+    PATH_FRAMES = os.getcwd() + f"/{frames_dir}/"
     FRAME_SIZE = (88, 64)
     DEFAULT_VELOCITY = 34
 
@@ -139,17 +136,34 @@ def generate_midifile_from_frames(framesfolder_name="greytest",
         # in the notes of the next frame
         last_empty_rows_from_last_frame = rows_without_changes
 
-    midi_file.save(f'{output_midifile_name}.mid')
+    midi_file.save(output_path)
 
 
 # /////////////////////////////////////////////
 # ----------------------------------------------------------
 # ------------------------- MAIN ---------------------------
 # ----------------------------------------------------------
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='Creates a MIDI file from a directory of image frames.')
+    parser.add_argument('frames_dir',
+                        default='./frames/',
+                        help='Path to directory containing frames')
+    parser.add_argument('--output',
+                        '-o',
+                        default='output.mid',
+                        help='Output MIDI file')
+    # parser.add_argument('--mode',
+    #                     '-m',
+    #                     choices=['default', 'nancarrow'],
+    #                     help='player mode')
+
+    args = parser.parse_args()
+
+    generate_midifile_from_frames(args.frames_dir, args.output)
+
+
 if __name__ == "__main__":
-    try:
-        framesfolder_name = sys.argv[1]
-    except:
-        framesfolder_name = "stuttergreys"
-    generate_midifile_from_frames(framesfolder_name)
-    nancarrow_player.start("output.mid")
+    main()

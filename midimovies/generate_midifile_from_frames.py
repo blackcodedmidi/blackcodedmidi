@@ -11,7 +11,6 @@ import mido
 # ------------------------- GENERATE MIDI --------------------------------
 # ------------------------------------------------------------------------
 def generate_midifile_from_frames(frames_dir, output_path):
-
     BEATS_PER_FRAME = 1
 
     PATH_FRAMES = os.getcwd() + f"/{frames_dir}/"
@@ -141,6 +140,10 @@ def main():
                         '-o',
                         default='output.mid',
                         help='Output MIDI file')
+    # parser.add_argument('--mode',
+    #                     '-m',
+    #                     choices=['default', 'nancarrow'],
+    #                     help='player mode')
 
     args = parser.parse_args()
 

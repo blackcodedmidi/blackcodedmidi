@@ -1,17 +1,15 @@
-import os
-import shutil
 import subprocess
-import sys
-
+import shutil
+import os
 from PIL import Image, ImageOps
-
+import sys
 
 # ------------------------------------------------------------------------
 # ------------------------- EXTRACT FRAMES FROM VIDEO --------------------
 # ------------------------------------------------------------------------
 def extract_frames_from_video(videoname):
     PATH_TEMP_FRAMES = os.getcwd() + "/temp/"
-    PATH_FINAL_FRAMES = os.getcwd() + "/frames/"
+    PATH_FINAL_FRAMES = os.getcwd() + "/movies_as_frames/frames/"
     OUTPUT_SIZE = (88, 64)
     #-----------
     if not os.path.exists(PATH_FINAL_FRAMES):
@@ -34,9 +32,8 @@ def extract_frames_from_video(videoname):
 
     if os.path.exists(PATH_TEMP_FRAMES):
         shutil.rmtree(PATH_TEMP_FRAMES)
-
-
 # /////////////////////////////////////////////
+
 
 # ----------------------------------------------------------
 # ------------------------- MAIN ---------------------------

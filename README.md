@@ -12,3 +12,7 @@ Also comes with a Pygame-based MIDI-pianoroll player
 
 Experiments with converting audio to MIDI using FFT and
 the like.
+
+## formulatic
+
+Experiments with procedurally generating MIDI

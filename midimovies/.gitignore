@@ -1,7 +1,0 @@
-*.mp4
-*.m4v
-midiplayer3/*
-frames/*
-n64/*
-test/*
-.venv/

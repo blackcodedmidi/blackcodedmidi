@@ -1,6 +1,5 @@
 import youtube_dl
 
-
 ydl_opts = {
     'format': 'bestvideo/best',
 }

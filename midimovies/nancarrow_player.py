@@ -1,9 +1,10 @@
+import math
 import os
+
 import mido
-import mido.backends.rtmidi  #explicit import for when building the .exe
+import mido.backends.rtmidi  # explicit import for when building the .exe
 import pygame
 import pygame.freetype  # Import the freetype module.
-import math
 
 print(mido.get_output_names())
 

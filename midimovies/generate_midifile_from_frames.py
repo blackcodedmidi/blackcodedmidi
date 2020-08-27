@@ -1,7 +1,9 @@
 import os
-from PIL import Image
-import mido
 import sys
+
+from PIL import Image
+
+import mido
 
 
 # ------------------------------------------------------------------------

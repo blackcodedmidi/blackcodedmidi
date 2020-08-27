@@ -1,8 +1,10 @@
-import subprocess
-import shutil
 import os
-from PIL import Image, ImageOps
+import shutil
+import subprocess
 import sys
+
+from PIL import Image, ImageOps
+
 
 # ------------------------------------------------------------------------
 # ------------------------- EXTRACT FRAMES FROM VIDEO --------------------
@@ -32,8 +34,9 @@ def extract_frames_from_video(videoname):
 
     if os.path.exists(PATH_TEMP_FRAMES):
         shutil.rmtree(PATH_TEMP_FRAMES)
-# /////////////////////////////////////////////
 
+
+# /////////////////////////////////////////////
 
 # ----------------------------------------------------------
 # ------------------------- MAIN ---------------------------

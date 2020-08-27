@@ -18,8 +18,9 @@ def generate_midifile_from_frames(frames_dir, output_path):
     FRAME_SIZE = (88, 64)
     DEFAULT_VELOCITY = 34
 
-    TICKS_PER_BEAT = 8 * FRAME_SIZE[
-        1]  #somewhat the midi resolution of a beat. I make sure is a multiplier fo the height, so then the PIXEL_AS_TICKS is a integer
+    # somewhat the midi resolution of a beat. I make sure is a multiplier fo
+    # the height, so then the PIXEL_AS_TICKS is a integer
+    TICKS_PER_BEAT = 8 * FRAME_SIZE[1]
     midi_file = mido.MidiFile(ticks_per_beat=TICKS_PER_BEAT)
     # The default MIDI tempo is 120 BPM, and the default Time Signature is 4/4. so at 4 beats the bar
     # trying to set a frame as a bar
@@ -66,23 +67,12 @@ def generate_midifile_from_frames(frames_dir, output_path):
                 last_pixel_color = past_color_column_list[x]
 
                 if y == FRAME_SIZE[1]:
-                    # this is y does not exist in the image. it just to close all notes that end in the last row
+                    # this is y does not exist in the image. it just to close
+                    # all notes that end in the last row
                     pixel_color = None
                 else:
                     r, g, b = pix[x, FRAME_SIZE[1] - y - 1]
                     grey = r * 0.3 + g * 0.59 + b * 0.11
-
-                    # if r > 100:
-                    #     if g > 100:
-                    #         pixel_color = 3
-                    #     else:
-                    #         pixel_color = 0
-                    # elif g > 100:
-                    #     pixel_color = 1
-                    # elif b > 100:
-                    #     pixel_color = 2
-                    # else:
-                    #     pixel_color = None
 
                     if grey < 50:
                         pixel_color = None
@@ -124,9 +114,12 @@ def generate_midifile_from_frames(frames_dir, output_path):
                                  note=note_number,
                                  velocity=velocity,
                                  time=delta_ticks))
-                delta_ticks = 0  # after adding one message with the delay for this row, the delta is set to zero
+                # after adding one message with the delay for this row, the
+                # delta is set to zero
+                delta_ticks = 0
 
-        #save last number of empty rows from this frame, to be uses as delay in the notes of the next frame
+        # save last number of empty rows from this frame, to be uses as delay
+        # in the notes of the next frame
         last_empty_rows_from_last_frame = rows_without_changes
 
     midi_file.save(output_path)

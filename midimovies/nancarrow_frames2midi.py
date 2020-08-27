@@ -124,9 +124,7 @@ def generate_midifile_from_frames(framesfolder_name="greytest",
             # end for x
             for event in events_for_this_row:
                 c_index, note_state, note_number, velocity = event
-                print(
-                    f"{c_index} : {note_state} : {note_number} : {delta_ticks}"
-                )
+                # print(f"{c_index} : {note_state} : {note_number} : {delta_ticks}")
                 track.append(
                     mido.Message(note_state,
                                  channel=c_index,

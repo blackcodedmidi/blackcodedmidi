@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import math
 import os
 
@@ -247,6 +246,8 @@ def start(midifile_name="output.mid", output_device=None):
 # ------------------------- MAIN ---------------------------
 # ----------------------------------------------------------
 def main():
+    import argparse
+
     parser = argparse.ArgumentParser(description='Plays a MIDI file.')
     parser.add_argument('input', help='a MIDI file')
     parser.add_argument('--output-device',

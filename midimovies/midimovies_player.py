@@ -20,11 +20,8 @@ def loopy_index(array, index):
     index = index % length
     return array[index]
 
-def show_midi_ports():
-    print()
 
-def start(midifile_name="output.mid", nancarrow=False):
-
+def start(midifile_name="output.mid", nancarrow=False, output_device=None):
     MODE_NANCARROW = nancarrow
     OPTIONS_SAVEFRAMES = False
     OPTIONS_SENDMIDI = True
@@ -32,10 +29,14 @@ def start(midifile_name="output.mid", nancarrow=False):
     BEATS_PER_FRAME = 1
     TOTAL_NOTES = 127
 
-    # print available midi ports
-    print(f"AVAILABLE MIDI PORTS: {mido.get_output_names()}")
-    # set the midi port
-    _midiport_ = mido.open_output('OmniMIDI 1')
+    # Open the first output, by default
+    if not output_device:
+        outputs = mido.get_output_names()
+        print("Available MIDI outputs:", outputs)
+        output_device = outputs[0]
+
+    print("MIDI output:", output_device)
+    _midiport_ = mido.open_output(output_device)
 
     # open midifile and start to format to handy lists
     mid = mido.MidiFile(midifile_name)
@@ -296,6 +297,10 @@ def main():
                         dest="nancarrow",
                         action="store_false",
                         help="disable Nancarrow mode")
+    parser.add_argument('--output-device',
+                        '-o',
+                        default='OmniMIDI 1',
+                        help='MIDI output device')
 
     args = parser.parse_args()
 

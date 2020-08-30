@@ -277,9 +277,30 @@ def start(midifile_name="output.mid", nancarrow=False):
 # ----------------------------------------------------------
 # ------------------------- MAIN ---------------------------
 # ----------------------------------------------------------
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Play a MIDI file",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-m",
+                        "--midifile",
+                        default="output.mid",
+                        help="MIDI file to play")
+    parser.add_argument("--nancarrow",
+                        dest="nancarrow",
+                        action="store_true",
+                        help="enable Nancarrow mode",
+                        default=False)
+    parser.add_argument("--no-nancarrow",
+                        dest="nancarrow",
+                        action="store_false",
+                        help="disable Nancarrow mode")
+
+    args = parser.parse_args()
+
+    start(args.midifile, nancarrow=args.nancarrow)
+
+
 if __name__ == "__main__":
-    try:
-        midifile_name = sys.argv[1]
-    except:
-        midifile_name = "output.mid"
-    start(midifile_name)
+    main()

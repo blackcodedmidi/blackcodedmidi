@@ -304,7 +304,9 @@ def main():
 
     args = parser.parse_args()
 
-    start(args.midifile, nancarrow=args.nancarrow)
+    start(args.midifile,
+          nancarrow=args.nancarrow,
+          output_device=args.output_device)
 
 
 if __name__ == "__main__":

@@ -367,7 +367,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-m",
                         "--midifile",
-                        default="formula.mid",
+                        default="formula-rgb_wall_of_death.mid",
                         help="MIDI file to play")
     parser.add_argument("--nancarrow",
                         dest="nancarrow",

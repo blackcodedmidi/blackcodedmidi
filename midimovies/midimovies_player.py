@@ -21,15 +21,7 @@ def loopy_index(array, index):
     index = index % length
     return array[index]
 
-
-def show_midi_ports():
-    print()
-
-def clamp(value, lower, upper):
-    return lower if value < lower else upper if value > upper else value
-
-def start(midifile_name="output.mid", nancarrow=False):
-
+def start(midifile_name="output.mid", nancarrow=False, output_device=None):
     MODE_NANCARROW = nancarrow
     OPTIONS_SAVEFRAMES = False
     OPTIONS_SENDMIDI = True
@@ -40,12 +32,14 @@ def start(midifile_name="output.mid", nancarrow=False):
     NUMBER_OF_CHANNELS = 16
 
 
-    # --------------------------------------------------------
-    # print available midi ports
-    print(f"AVAILABLE MIDI PORTS: {mido.get_output_names()}")
-    # set the midi port
-    _midiport_ = mido.open_output('OmniMIDI 1')
-    # --------------------------------------------------------
+    # Open the first output, by default
+    if not output_device:
+        outputs = mido.get_output_names()
+        print("Available MIDI outputs:", outputs)
+        output_device = outputs[0]
+
+    print("MIDI output:", output_device)
+    _midiport_ = mido.open_output(output_device)
 
 
     # --------------------------------------------------------
@@ -365,9 +359,36 @@ def start(midifile_name="output.mid", nancarrow=False):
 # ----------------------------------------------------------
 # ------------------------- MAIN ---------------------------
 # ----------------------------------------------------------
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Play a MIDI file",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-m",
+                        "--midifile",
+                        default="formula.mid",
+                        help="MIDI file to play")
+    parser.add_argument("--nancarrow",
+                        dest="nancarrow",
+                        action="store_true",
+                        help="enable Nancarrow mode",
+                        default=False)
+    parser.add_argument("--no-nancarrow",
+                        dest="nancarrow",
+                        action="store_false",
+                        help="disable Nancarrow mode")
+    parser.add_argument('--output-device',
+                        '-o',
+                        default='OmniMIDI 1',
+                        help='MIDI output device')
+
+    args = parser.parse_args()
+
+    start(args.midifile,
+          nancarrow=args.nancarrow,
+          output_device=args.output_device)
+
+
 if __name__ == "__main__":
-    try:
-        midifile_name = sys.argv[1]
-    except:
-        midifile_name = "output.mid"
-    start(midifile_name, False)
+    main()

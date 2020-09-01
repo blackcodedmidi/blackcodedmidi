@@ -18,9 +18,9 @@ midi_file.tracks.append(track)
 for t in range(TICKS_PER_BEAT*4):
     for s in range(2):
         note_state = s
-        note = int(60 + math.sin((t/10)) * 30)
+        note = 20 + t%88
         velocity = 64
-        delta_ticks = int((t%20)+1)* int((t/TICKS_PER_BEAT)*100)
+        delta_ticks = 20
 
         channel = int(t%3)
 

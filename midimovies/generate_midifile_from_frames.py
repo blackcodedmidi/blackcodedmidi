@@ -84,23 +84,26 @@ def generate_midifile_from_frames(framesfolder_name="n64", output_midifile_name=
 
                     if MODE_NANCARROW:
                         grey = ((r + g + b) / 3)/255
-                        # if grey <= 0.5:
+
+
+                        if grey <= 0.5:
+                            pixel_color = 1
+                        elif grey <= 0.9:
+                            pixel_color = 2
+                        else:
+                            pixel_color = None
+
+                        # if grey <= 0.01:
                         #     pixel_color = 1
-                        # elif grey <= 0.9:
+                        # elif grey <= 0.35:
                         #     pixel_color = 2
+                        # elif grey <= 0.6:
+                        #     pixel_color = 4
+                        # elif grey <= 0.95:
+                        #     pixel_color = 8
                         # else:
                         #     pixel_color = None
 
-                        if grey <= 0.01:
-                            pixel_color = 1
-                        elif grey <= 0.35:
-                            pixel_color = 2
-                        elif grey <= 0.6:
-                            pixel_color = 4
-                        elif grey <= 0.95:
-                            pixel_color = 8
-                        else:
-                            pixel_color = None
                     else:
                         grey = r * 0.3 + g * 0.59 + b * 0.11
                         # if r > 100:
@@ -114,17 +117,20 @@ def generate_midifile_from_frames(framesfolder_name="n64", output_midifile_name=
                         #     pixel_color = 2
                         # else:
                         #     pixel_color = None
-                    
-                        if grey < 50:
+                        
+                        # for betty boop
+                        if grey < 20:
                         	pixel_color = None
-                        elif grey < 100:
+                        elif grey < 65:
                         	pixel_color = 0
-                        elif grey < 150:
+                        elif grey < 90:
                             pixel_color = 1
-                        elif grey < 200:
+                        elif grey < 145:
                             pixel_color = 2
-                        else:
+                        elif grey < 200:
                             pixel_color = 3
+                        else:
+                            pixel_color = 4
 
                 note = x + 20
                 if pixel_color != last_pixel_color:
@@ -164,5 +170,5 @@ if __name__ == "__main__":
     try:
         framesfolder_name = sys.argv[1]
     except:
-        framesfolder_name = "n64"
-    generate_midifile_from_frames(framesfolder_name)
+        framesfolder_name = "test"
+    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_multiplier=8)

@@ -15,34 +15,36 @@ def generate_from_formula(formula, ticks_per_beat=64, *, output_path):
     track = mido.MidiTrack()
     midi_file.tracks.append(track)
 
-    total_channels=11
+    total_channels = 11
 
-    for t in range(ticks_per_beat*2):
+    for t in range(ticks_per_beat * 2):
         for s in range(1):
             for state in range(2):
                 note_state = True if state == 0 else False
-                note = 20 + (t%88-(s*sine(t/ticks_per_beat)*80))
-                channel = t/100 + t%88
-                delta_ticks = int(t/ticks_per_beat) + 1
-
+                note = 20 + (t % 88 - (s * sine(t / ticks_per_beat) * 80))
+                channel = t / 100 + t % 88
+                delta_ticks = int(t / ticks_per_beat) + 1
 
                 velocity = 64
                 if note_state:
                     note_state = "note_on"
                 else:
                     note_state = "note_off"
-                
-                ticc = int(t/ticks_per_beat) + 1
+
+                ticc = int(t / ticks_per_beat) + 1
                 for clone in range(ticc):
-                    new_note = int((note+clone) %127 )
-                    channel = int(channel%total_channels)
-                    track.append(mido.Message(note_state, channel=channel, note=new_note, velocity=velocity, time=delta_ticks))
+                    new_note = int((note + clone) % 127)
+                    channel = int(channel % total_channels)
+                    track.append(
+                        mido.Message(note_state,
+                                     channel=channel,
+                                     note=new_note,
+                                     velocity=velocity,
+                                     time=delta_ticks))
                     delta_ticks = 0
 
-    name = "rgb_wall_of_death"
-    midi_file.save(f"formula-{name}.mid")
-    #play it
-    midimovies_player.start(f"formula-{name}.mid", nancarrow=False)
+    midi_file.save(output_path)
+    midimovies_player.start(output_path)
     
 
 def main():

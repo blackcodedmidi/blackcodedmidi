@@ -1,15 +1,22 @@
 '''
 # TODO
-ver que onda con el alpha.
-no parece funcionar. Loq ue hace que no funcione el prevbuffer, and so on
+- ver que onda con el alpha.
+    no parece funcionar. Lo que hace que no funcione el prevbuffer, and so on
+- Hacer una funcion que lea el array ya arreglado desde un OSC mesagge
 '''
-
 import moderngl
 import moderngl_window as mglw
 import numpy as np
 import time
 import math
 import mido
+# osc stuff
+import threading
+from pythonosc.dispatcher import Dispatcher
+from pythonosc.osc_server import BlockingOSCUDPServer
+import ast # transform arrays formated string to real arrays
+# -----------------------------------------------------------------
+# -----------------------------------------------------------------
 
 WINDOW_SIZE = (878, 600)
 
@@ -67,18 +74,36 @@ COLOR_CHANNELS = [
 
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
-# -----------------------------------------------------------------
-def loopy_index(array, index):
-    length = len(array)
+# OSC stuff
+def filter_handler(address, *args):
+    print(f"{address}: {args}")
+def refreshSong(address, *args):
+    global song
+    global song_length
 
-    if index >= length:
-        index = index - length
-    elif index < 0:
-        index = length - index
+    f= open("midi.txt","r")
+    song = f.read()
+    f.close()
 
-    index = index % length
-    return array[index]
+    song = ast.literal_eval(song)
+
+    magic_number = 0.50099403578528827037773359840954
+    song_length = (len(song)-1)*magic_number
+
+    print("refresh")
+    
+def startServer():
+    dispatcher = Dispatcher()
+    dispatcher.map("/filter", filter_handler)
+    dispatcher.map("/refresh", refreshSong)
+    ip = "127.0.0.1"
+    port = 1337
+    server = BlockingOSCUDPServer((ip, port), dispatcher)
+    server.serve_forever()  # Blocks forever
 # -----------------------------------------------------------------
+# -----------------------------------------------------------------
+# Handy DRAW functions:
+# put toghether vertices to create a 'rectangle'
 def rect(x, y, w, h):
     # mapping to a space from -1 to 1
     x = (x/WINDOW_SIZE[0] - 0.5)*2
@@ -88,6 +113,8 @@ def rect(x, y, w, h):
 
     return [x, y,    x+w, y,  x, y+h,
             x, y+h,  x+w, y,  x+w, y+h]
+# -----------------------------------------------------------------
+# -----------------------------------------------------------------
 # -----------------------------------------------------------------
 class Player(mglw.WindowConfig):
     gl_version = (3, 3)    
@@ -225,6 +252,7 @@ class Player(mglw.WindowConfig):
         )
         self.vao_simple = self.ctx.vertex_array(self.program_simple, [(screen_quad, '2f 2f', 'in_pos', 'in_uv')])
 
+        
 
     def mouse_position_event(self, x, y, dx, dy):
         self.speed = WINDOW_SIZE[1]*(y/WINDOW_SIZE[1])*1.01    
@@ -273,9 +301,10 @@ class Player(mglw.WindowConfig):
         position_in_frames = int(self.scroller_y/WINDOW_HEIGHT)
         # grabing just the frames that that have a chance of drawing or making sound in this iteration
         notes_to_check = []
-        notes_to_check += loopy_index(song, position_in_frames-1)
-        notes_to_check += loopy_index(song, position_in_frames)
-        notes_to_check += loopy_index(song, position_in_frames+1)
+        notes_to_check += song[(position_in_frames-1) % (len(song)-1)] # wrap around between valid index
+        notes_to_check += song[(position_in_frames  ) % (len(song)-1)]
+        notes_to_check += song[(position_in_frames+1) % (len(song)-1)]
+
 
         for note in notes_to_check:
             # fail safe check, skip note if it has something weird
@@ -399,9 +428,10 @@ class Player(mglw.WindowConfig):
         self.ctx.enable_only(moderngl.BLEND)
         self.vao_simple.render(mode=moderngl.TRIANGLE_STRIP)
 
-
         
 # -----------------------------------------------------------------
+
+
 def loadmidi(midifile):
     global song
     global song_length
@@ -452,6 +482,10 @@ def loadmidi(midifile):
     #     for m in frame:
     #         print(m)
     # quit()
+
+    # print(song)
+    # print(f"song_length: {song_length}")
+    # print(f"len(song): {len(song)}")
     print("DONE CONVERTING MIDIFILE")
 # -----------------------------------------------------------------
 def openMidiPort(output_device=""):
@@ -494,8 +528,13 @@ def main():
     args = parser.parse_args()
 
     loadmidi(args.midifile)
+    
     openMidiPort(args.output_device)
+
     mglw.run_window_config(Player)
 
 if __name__ == "__main__":
+    # start OSC server
+    threading.Thread(target=startServer, daemon=True).start() # daemon=True for auto close thread when closing the window
+    # start blackola window
     main()

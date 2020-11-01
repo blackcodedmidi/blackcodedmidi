@@ -7,7 +7,7 @@ import sys
 # ------------------------------------------------------------------------
 # ------------------------- GENERATE MIDI --------------------------------
 # ------------------------------------------------------------------------
-def generate_midifile_from_frames(framesfolder_name="n64", output_midifile_name="output", nancarrow=True, clone_multiplier=1):
+def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_name="output", nancarrow=True, clone_multiplier=1):
 
     MODE_NANCARROW = nancarrow
 
@@ -171,4 +171,4 @@ if __name__ == "__main__":
         framesfolder_name = sys.argv[1]
     except:
         framesfolder_name = "test"
-    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_multiplier=8)
+    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_multiplier=3)

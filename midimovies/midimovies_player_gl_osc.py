@@ -6,6 +6,7 @@
 '''
 import ast  # transform arrays formated string to real arrays
 import math
+import sys
 import threading
 import time
 
@@ -74,6 +75,86 @@ COLOR_CHANNELS = [
 #     (218, 237, 210),
 #     (255, 255, 255),
 # ]
+
+# --
+# GL
+
+
+def run_window_config(config_cls: mglw.WindowConfig,
+                      timer=None,
+                      args=None) -> None:
+    """
+    Run an WindowConfig entering a blocking main loop
+
+    Args:
+        config_cls: The WindowConfig class to render
+        args: Override sys.args
+    """
+    mglw.setup_basic_logging(config_cls.log_level)
+    parser = mglw.create_parser()
+    config_cls.add_arguments(parser)
+    values = parse_args(args=args, parser=parser)
+    config_cls.argv = values
+    window_cls = mglw.get_local_window_cls(values.window)
+
+    # Calculate window size
+    size = values.size or config_cls.window_size
+    size = int(size[0] * values.size_mult), int(size[1] * values.size_mult)
+
+    # Resolve cursor
+    show_cursor = values.cursor
+    if show_cursor is None:
+        show_cursor = config_cls.cursor
+
+    window = window_cls(
+        title=config_cls.title,
+        size=size,
+        fullscreen=config_cls.fullscreen or values.fullscreen,
+        resizable=values.resizable
+        if values.resizable is not None else config_cls.resizable,
+        gl_version=config_cls.gl_version,
+        aspect_ratio=config_cls.aspect_ratio,
+        vsync=values.vsync if values.vsync is not None else config_cls.vsync,
+        samples=values.samples
+        if values.samples is not None else config_cls.samples,
+        cursor=show_cursor if show_cursor is not None else True,
+    )
+    window.print_context_info()
+    mglw.activate_context(window=window)
+    timer = mglw.Timer()
+    window.config = config_cls(ctx=window.ctx, wnd=window, timer=timer)
+
+    timer.start()
+
+    while not window.is_closing:
+        current_time, delta = timer.next_frame()
+
+        if window.config.clear_color is not None:
+            window.clear(*window.config.clear_color)
+        else:
+            window.use()
+        window.render(current_time, delta)
+        if not window.is_closing:
+            window.swap_buffers()
+
+    _, duration = timer.stop()
+    window.destroy()
+    if duration > 0:
+        mglw.logger.info("Duration: {0:.2f}s @ {1:.2f} FPS".format(
+            duration, window.frames / duration))
+
+
+def parse_args(args=None, parser=None):
+    """Parse arguments from sys.argv
+
+    Passing in your own argparser can be user to extend the parser.
+
+    Keyword Args:
+        args: override for sys.argv
+        parser: Supply your own argparser instance
+    """
+    parser = parser or mglw.create_parser()
+    return parser.parse_args(args if args is not None else sys.argv[1:])
 
 
 # -----------------------------------------------------------------
@@ -533,42 +614,30 @@ def openMidiPort(output_device=""):
 # ----------------------------------------------------------
 # ------------------------- MAIN ---------------------------
 # ----------------------------------------------------------
-def main():
+def start_player(midifile=None, output_device=None, mglw_args=None):
+    threading.Thread(target=startServer, daemon=True).start()
+    loadmidi(midifile)
+    openMidiPort(output_device)
+    run_window_config(Player, args=mglw_args)
+
+
+if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Play a MIDI file",
+        description="BlackolaGL MIDI player",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-m",
                         "--midifile",
                         default="saved_midis/formula-galaxian.mid",
                         help="MIDI file to play")
-    parser.add_argument("--nancarrow",
-                        dest="nancarrow",
-                        action="store_true",
-                        help="enable Nancarrow mode",
-                        default=False)
-    parser.add_argument("--no-nancarrow",
-                        dest="nancarrow",
-                        action="store_false",
-                        help="disable Nancarrow mode")
     parser.add_argument('--output-device',
                         '-o',
                         default='',
                         help='MIDI output device')
 
-    args = parser.parse_args()
+    args, extra_args = parser.parse_known_args()
 
-    loadmidi(args.midifile)
-
-    openMidiPort(args.output_device)
-
-    mglw.run_window_config(Player)
-
-
-if __name__ == "__main__":
-    # start OSC server
-    threading.Thread(target=startServer, daemon=True).start(
-    )  # daemon=True for auto close thread when closing the window
-    # start blackola window
-    main()
+    start_player(midifile=args.midifile,
+                 output_device=args.output_device,
+                 mglw_args=extra_args)

@@ -411,7 +411,7 @@ class Player(mglw.WindowConfig):
         BARGFX_WIDTH = 9
         BARGFX_MARGIN = 1
         WINDOW_HEIGHT = WINDOW_SIZE[1]
-        SOUND_TRIGGER_ZONE = int(WINDOW_SIZE[1] / 10)
+        SOUND_TRIGGER_ZONE = WINDOW_HEIGHT // 10
         
         self.scroller_y += self.speed
         if self.scroller_y > WINDOW_HEIGHT * TOTAL_FRAMES:
@@ -467,7 +467,7 @@ class Player(mglw.WindowConfig):
             # and note[5] is True is the note has already trigger its end state
             # This was for something like stoping the sound to trigger itself multiple times, or something like that.
             if note[5] == False:
-                if start < self.scroller_y + SOUND_TRIGGER_ZONE:
+                if start < self.scroller_y + SOUND_TRIGGER_ZONE * 1.5:
                     note[5] = True
                     # I think this is used only for the drawing of the piano keys at bottom
                     channels_notes_isplaying[note[1]][note[2]] = True
@@ -477,7 +477,7 @@ class Player(mglw.WindowConfig):
                                            note=note[2])
                         _midiport_.send(msg)
             elif note[6] == False:
-                if end < self.scroller_y + SOUND_TRIGGER_ZONE:
+                if end < self.scroller_y + SOUND_TRIGGER_ZONE * 1.5:
                     note[6] = True
                     channels_notes_isplaying[note[1]][note[2]] = False
                     if OPTIONS_SENDMIDI:

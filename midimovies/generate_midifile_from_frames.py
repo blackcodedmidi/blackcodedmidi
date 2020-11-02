@@ -11,7 +11,8 @@ def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_nam
 
     MODE_NANCARROW = nancarrow
 
-    BEATS_PER_FRAME = 1
+    # this was originally 1, but with two works with the new player that expects 1 as a complete height of the window
+    BEATS_PER_FRAME = 2
 
     PATH_FRAMES = os.getcwd() + f"/movies_as_frames/{framesfolder_name}/"
     FRAME_SIZE = (88, 64)
@@ -154,7 +155,7 @@ def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_nam
             # end for x
             for event in events_for_this_row:
                 c_index, note_state, note_number, velocity = event
-                # print(f"{c_index} : {note_state} : {note_number} : {delta_ticks}")
+                print(f"{c_index} : {note_state} : {note_number} : {delta_ticks}")
                 track.append(mido.Message(note_state, channel=c_index, note=note_number, velocity=velocity, time=delta_ticks))
                 delta_ticks = 0 # after adding one message with the delay for this row, the delta is set to zero
 
@@ -171,5 +172,5 @@ if __name__ == "__main__":
     try:
         framesfolder_name = sys.argv[1]
     except:
-        framesfolder_name = "test-simple"
+        framesfolder_name = "test-arrow"
     generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_multiplier=1)

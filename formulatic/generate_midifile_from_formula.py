@@ -5,7 +5,7 @@ import mido
 from PIL import Image
 
 
-def generate_from_formula(formula, ticks_per_beat=64, *, output_path):
+def generate_from_formula(formula, ticks_per_beat=8000, *, output_path):
     midi_file = mido.MidiFile(ticks_per_beat=ticks_per_beat)
 
     # tracks are NOT channels!!!!

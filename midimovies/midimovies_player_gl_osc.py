@@ -32,9 +32,9 @@ LOOP_GLUE = True
 OPTIONS_SENDMIDI = True
 _midiport_ = None
 
-BEATS_PER_FRAME = 1
-FRAMEHEIGHT_AS_SECONDS = BEATS_PER_FRAME / (
-            120 / 60)  # default for created midis is 120 BPM
+# well not really seconds, but if a note is the size of the height of the window, the start is 0 and the end is 1
+# is seconds is the movie2frame is set at 60bpm
+FRAMEHEIGHT_AS_SECONDS = 1 
 
 
 TOTAL_FRAMES = None
@@ -175,10 +175,6 @@ def parse_args(args=None, parser=None):
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
 # OSC stuff
-def filter_handler(address, *args):
-    print(f"{address}: {args}")
-
-
 def refreshSong(address, *args):
     global song
     global TOTAL_FRAMES
@@ -198,7 +194,6 @@ def refreshSong(address, *args):
 
 def startServer():
     dispatcher = Dispatcher()
-    dispatcher.map("/filter", filter_handler)
     dispatcher.map("/refresh", refreshSong)
     ip = "127.0.0.1"
     port = 1337
@@ -215,8 +210,7 @@ def duplicateFirstFrameAtTheEnd(song):
 
     for note in song[0]: # for notes in first frame
         new_note = note.copy()
-        new_note[2] += number_of_frames * FRAMEHEIGHT_AS_SECONDS
-        new_note[3] += number_of_frames * FRAMEHEIGHT_AS_SECONDS
+        new_note[0] = number_of_frames
         cloned_first_frame.append(new_note)
     song.append(cloned_first_frame)
     return song
@@ -395,7 +389,7 @@ class Player(mglw.WindowConfig):
             self.program_simple, [(screen_quad, '2f 2f', 'in_pos', 'in_uv')])
 
     def mouse_position_event(self, x, y, dx, dy):
-        self.speed = WINDOW_SIZE[1] * (y / WINDOW_SIZE[1]) * 1.01
+        self.speed = WINDOW_SIZE[1] * (y / WINDOW_SIZE[1]) * 2.01
 
     def render(self, time, frametime):
 
@@ -419,16 +413,10 @@ class Player(mglw.WindowConfig):
         WINDOW_HEIGHT = WINDOW_SIZE[1]
         SOUND_TRIGGER_ZONE = int(WINDOW_SIZE[1] / 10)
         
-
-        
-
-        
-
-
         self.scroller_y += self.speed
         if self.scroller_y > WINDOW_HEIGHT * TOTAL_FRAMES:
-            self.scroller_y = 0
-        elif self.scroller_y < 0:
+            self.scroller_y = - SOUND_TRIGGER_ZONE # before was 0, and the first note doesn't played 
+        elif self.scroller_y < -SOUND_TRIGGER_ZONE: #before was 0, and the first note doesn't played  
             self.scroller_y = WINDOW_HEIGHT * TOTAL_FRAMES
 
         # grab in wich "frame" of the movie whe are TODO: is this correct? Also, the last frame don't show
@@ -436,9 +424,7 @@ class Player(mglw.WindowConfig):
         # print(position_in_frames)
         # grabing just the frames that that have a chance of drawing or making sound in this iteration
         notes_to_check = []
-        notes_to_check += song[(position_in_frames - 1) %
-                               (len(song) -
-                                1)]  # wrap around between valid index
+        notes_to_check += song[(position_in_frames - 1) % len(song)]
         notes_to_check += song[(position_in_frames) % len(song)]
         notes_to_check += song[(position_in_frames + 1) % len(song)]
 
@@ -452,10 +438,12 @@ class Player(mglw.WindowConfig):
                 continue
 
             # converting note's start and end values to screen's height porcentage
-            x = (note[1] - MIDINOTE_OFFSET) * (BARGFX_WIDTH + BARGFX_MARGIN)
-            start = (note[2] / FRAMEHEIGHT_AS_SECONDS) * WINDOW_HEIGHT
-            end = (note[3] / FRAMEHEIGHT_AS_SECONDS) * WINDOW_HEIGHT
-            # print(f"start {start} / end {end}")
+            # [frame_index, channel, note, start, end, false, false]
+            x = (note[2] - MIDINOTE_OFFSET) * (BARGFX_WIDTH + BARGFX_MARGIN)
+            start = note[0]*FRAMEHEIGHT_AS_SECONDS+note[3] 
+            end =   note[0]*FRAMEHEIGHT_AS_SECONDS+note[4] 
+            start = start * WINDOW_HEIGHT 
+            end =  end * WINDOW_HEIGHT
 
             #----- DRAW NOTE
             if (start > self.scroller_y
@@ -470,7 +458,7 @@ class Player(mglw.WindowConfig):
                 h = int(end - start)
 
                 for i in range(6):
-                    colors = np.append(colors, COLOR_CHANNELS[note[0]%len(COLOR_CHANNELS)])
+                    colors = np.append(colors, COLOR_CHANNELS[note[1]%len(COLOR_CHANNELS)])
                 vertices = np.append(vertices, rect(x, y, w, h))
 
             #----- SEND MIDI
@@ -478,29 +466,29 @@ class Player(mglw.WindowConfig):
             # Main idea is that note[4] is True is the note has already started playing
             # and note[5] is True is the note has already trigger its end state
             # This was for something like stoping the sound to trigger itself multiple times, or something like that.
-            if note[4] == False:
+            if note[5] == False:
                 if start < self.scroller_y + SOUND_TRIGGER_ZONE:
-                    note[4] = True
-                    channels_notes_isplaying[note[0]][note[
-                        1]] = True  # I think this is used only for the drawing of the piano keys at bottom
+                    note[5] = True
+                    # I think this is used only for the drawing of the piano keys at bottom
+                    channels_notes_isplaying[note[1]][note[2]] = True
                     if OPTIONS_SENDMIDI:
                         msg = mido.Message("note_on",
-                                           channel=note[0],
-                                           note=note[1])
+                                           channel=note[1],
+                                           note=note[2])
                         _midiport_.send(msg)
-            elif note[5] == False:
+            elif note[6] == False:
                 if end < self.scroller_y + SOUND_TRIGGER_ZONE:
-                    note[5] = True
-                    channels_notes_isplaying[note[0]][note[1]] = False
+                    note[6] = True
+                    channels_notes_isplaying[note[1]][note[2]] = False
                     if OPTIONS_SENDMIDI:
                         msg = mido.Message("note_off",
-                                           channel=note[0],
-                                           note=note[1])
+                                           channel=note[1],
+                                           note=note[2])
                         _midiport_.send(msg)
             elif start > self.scroller_y + SOUND_TRIGGER_ZONE and end > self.scroller_y + SOUND_TRIGGER_ZONE:
                 # This resets the triggering ability of the notes, when the pianoroll loops, and the movie start again
-                note[4] = False
                 note[5] = False
+                note[6] = False
 
         for piano_key in range(127):
             color = None
@@ -593,7 +581,8 @@ def loadmidi(midifile):
     # su start y end
     print("STARTING RECONVERTING MIDIFILE TO SOMETHING MORE HANDY")
     # default midi is 120 BPM
-    FRAME_AS_SECONDS = 60 / 120
+    FRAME_AS_SECONDS = 60 / 60
+    current_frame = 0;
     for i, msg in enumerate(mid):
         if not isinstance(msg, mido.MetaMessage):
             # msg.time come as seconds
@@ -601,6 +590,7 @@ def loadmidi(midifile):
             frame_timer += msg.time
 
             if frame_timer > FRAME_AS_SECONDS:  # it's a new film frame!
+                current_frame += 1
                 # grab the extra time that pass since the start of this new
                 # frame
                 frame_timer = frame_timer - FRAME_AS_SECONDS
@@ -612,12 +602,12 @@ def loadmidi(midifile):
                 # print("ON")
                 # print(f"save time on channel {msg.channel}:{msg.note} =
                 # {timer}")
-                start_times[msg.channel][msg.note] = timer
+                start_times[msg.channel][msg.note] = frame_timer
             elif (msg.type == 'note_off'):
                 # print("OFF")
                 start = start_times[msg.channel][msg.note]
-                end = timer
-                data = [msg.channel, msg.note, start, end, False, False]
+                end = frame_timer
+                data = [current_frame, msg.channel, msg.note, start, end, False, False]
                 # print(data)
                 frame_data.append(data)
     #don't forget to add the last frame!
@@ -635,8 +625,8 @@ def loadmidi(midifile):
         song = duplicateFirstFrameAtTheEnd(song)
     
 
-    print(song)
-    print(f"TOTAL_FRAMES: {TOTAL_FRAMES}")
+    # print(song)
+    # print(f"TOTAL_FRAMES: {TOTAL_FRAMES}")
     print("DONE CONVERTING MIDIFILE")
 
 
@@ -671,7 +661,7 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-m",
                         "--midifile",
-                        default="saved_midis/test-simple.mid",
+                        default="output.mid",
                         help="MIDI file to play")
     parser.add_argument('--output-device',
                         '-o',

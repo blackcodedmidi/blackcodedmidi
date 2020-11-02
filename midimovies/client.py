@@ -16,9 +16,6 @@ def sine(t):
     return math.sin(t) * 0.5 + 0.5
 
 
-"""Ticks per beat"""
-TPB = 64
-
 # song = [[[4, 58, 0.234375, 0.265625, False, False],
 #          [4, 71, 0.234375, 0.265625, False, False],
 #          [4, 59, 0.21875, 0.28125, False, False],
@@ -52,17 +49,18 @@ TPB = 64
 
 def build_song():
     song = []
-    for f in range(2):
+    for f in range(20):
         frame = []
         for t in range(64):
             for n in range(8):
-                note = 30 + (t % 1) + sine(t) * 20
+                note = 20 + f*3 + (t % 8) + sine(t) * 20
                 channel = t
-                start = (t / TPB + f)
-                end = (t / TPB + f) + 3 / TPB
+                start = (t/65+ f)
+                end = (t/65+ f) + 0.02
                 frame.append([
+                    f, 
                     int(channel) % 10,
-                    int(note) % 127, start % TPB, end % TPB, False, False
+                    int(note) % 127, start%1, end%1, False, False
                 ])
         song.append(frame)
     return song

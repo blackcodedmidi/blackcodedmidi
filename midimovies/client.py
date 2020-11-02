@@ -52,11 +52,11 @@ TPB = 64
 
 def build_song():
     song = []
-    for f in range(4):
+    for f in range(2):
         frame = []
         for t in range(64):
-            for n in range(4):
-                note = 40 + n + (t % 1) + sine(t) * 1
+            for n in range(8):
+                note = 30 + (t % 1) + sine(t) * 20
                 channel = t
                 start = (t / TPB + f)
                 end = (t / TPB + f) + 3 / TPB

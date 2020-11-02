@@ -63,6 +63,7 @@ def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_nam
         # I want 1 more, so i can close notes that end in the last pixel
         for y in range(FRAME_SIZE[1]+1):      
 
+            # y = FRAME_SIZE[1]+1 - y
             
             if y != FRAME_SIZE[1]:
                 rows_without_changes += 1
@@ -106,31 +107,31 @@ def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_nam
 
                     else:
                         grey = r * 0.3 + g * 0.59 + b * 0.11
-                        # if r > 100:
-                        #     if g > 100:
-                        #         pixel_color = 3
-                        #     else:
-                        #         pixel_color = 0
-                        # elif g > 100:
-                        #     pixel_color = 1
-                        # elif b > 100:
-                        #     pixel_color = 2
-                        # else:
-                        #     pixel_color = None
-                        
-                        # for betty boop
-                        if grey < 20:
-                        	pixel_color = None
-                        elif grey < 65:
-                        	pixel_color = 0
-                        elif grey < 90:
+                        if r > 100:
+                            if g > 100:
+                                pixel_color = 3
+                            else:
+                                pixel_color = 0
+                        elif g > 100:
                             pixel_color = 1
-                        elif grey < 145:
+                        elif b > 100:
                             pixel_color = 2
-                        elif grey < 200:
-                            pixel_color = 3
                         else:
-                            pixel_color = 4
+                            pixel_color = None
+                        
+                        # # for betty boop
+                        # if grey < 20:
+                        # 	pixel_color = None
+                        # elif grey < 65:
+                        # 	pixel_color = 0
+                        # elif grey < 90:
+                        #     pixel_color = 1
+                        # elif grey < 145:
+                        #     pixel_color = 2
+                        # elif grey < 200:
+                        #     pixel_color = 3
+                        # else:
+                        #     pixel_color = 4
 
                 note = x + 20
                 if pixel_color != last_pixel_color:
@@ -170,5 +171,5 @@ if __name__ == "__main__":
     try:
         framesfolder_name = sys.argv[1]
     except:
-        framesfolder_name = "test"
-    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_multiplier=3)
+        framesfolder_name = "test-simple"
+    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_multiplier=1)

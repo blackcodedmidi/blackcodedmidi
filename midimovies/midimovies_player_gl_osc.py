@@ -3,6 +3,10 @@
 - ver que onda con el alpha.
     no parece funcionar. Lo que hace que no funcione el prevbuffer, and so on
 - Hacer una funcion que lea el array ya arreglado desde un OSC mesagge
+- Este error me lo tira seguido, despues de jugar un rato, updateando formulas
+    File "midimovies_player_gl_osc.py", line 436, in render
+    IndexError: string index out of range
+- LOOP_GLUE es no funca del todo, el frimer frame no suena en test-simple
 '''
 import ast  # transform arrays formated string to real arrays
 import math
@@ -23,10 +27,17 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 
 WINDOW_SIZE = (878, 600)
 
+LOOP_GLUE = True
+
 OPTIONS_SENDMIDI = True
 _midiport_ = None
 
 BEATS_PER_FRAME = 1
+FRAMEHEIGHT_AS_SECONDS = BEATS_PER_FRAME / (
+            120 / 60)  # default for created midis is 120 BPM
+
+
+TOTAL_FRAMES = None
 TOTAL_NOTES = 127
 NUMBER_OF_CHANNELS = 16
 BLACKS_PATTERN = [
@@ -35,8 +46,6 @@ BLACKS_PATTERN = [
 ]
 
 song = []
-song_length = 0
-
 channels_notes_isplaying = []
 for i in range(NUMBER_OF_CHANNELS):
     temp_notes_state = []
@@ -52,20 +61,26 @@ COLOR_YELLOW = (1, 1, 0)
 COLOR_WHITE = (1, 1, 1)
 COLOR_HOLE = (0, 0, 0)
 # paleta arcoiris hipster
-COLOR_CHANNELS = [
-    [0.01568627450980392, 0.32941176470588235, 0.34901960784313724],
-    [0.03137254901960784, 0.45098039215686275, 0.3254901960784314],
-    [0.08235294117647059, 0.7607843137254902, 0.5254901960784314],
-    [0.6705882352941176, 0.8509803921568627, 0.42745098039215684],
-    [0.984313725490196, 0.7490196078431373, 0.32941176470588235],
-    [0.9333333333333333, 0.4196078431372549, 0.23137254901960785],
-    [0.9254901960784314, 0.058823529411764705, 0.2784313725490196],
-    [0.6274509803921569, 0.17254901960784313, 0.36470588235294116],
-    [0.4392156862745098, 0.01568627450980392, 0.3764705882352941],
-    [0.00784313725490196, 0.17254901960784313, 0.47843137254901963],
-    [0.14901960784313725, 0.1607843137254902, 0.28627450980392155],
-]
+# COLOR_CHANNELS = [
+#     [0.01568627450980392, 0.32941176470588235, 0.34901960784313724],
+#     [0.03137254901960784, 0.45098039215686275, 0.3254901960784314],
+#     [0.08235294117647059, 0.7607843137254902, 0.5254901960784314],
+#     [0.6705882352941176, 0.8509803921568627, 0.42745098039215684],
+#     [0.984313725490196, 0.7490196078431373, 0.32941176470588235],
+#     [0.9333333333333333, 0.4196078431372549, 0.23137254901960785],
+#     [0.9254901960784314, 0.058823529411764705, 0.2784313725490196],
+#     [0.6274509803921569, 0.17254901960784313, 0.36470588235294116],
+#     [0.4392156862745098, 0.01568627450980392, 0.3764705882352941],
+#     [0.00784313725490196, 0.17254901960784313, 0.47843137254901963],
+#     [0.14901960784313725, 0.1607843137254902, 0.28627450980392155],
+# ]
 
+COLOR_CHANNELS = [
+    COLOR_RED,
+    COLOR_GREEN,
+    COLOR_BLUE,
+    COLOR_WHITE
+]
 # le queda cheto a betty boop
 # COLOR_CHANNELS = [
 #     (62, 14, 69),
@@ -166,7 +181,7 @@ def filter_handler(address, *args):
 
 def refreshSong(address, *args):
     global song
-    global song_length
+    global TOTAL_FRAMES
 
     f = open("midi.txt", "r")
     song = f.read()
@@ -174,8 +189,9 @@ def refreshSong(address, *args):
 
     song = ast.literal_eval(song)
 
-    magic_number = 0.50099403578528827037773359840954
-    song_length = (len(song) - 1) * magic_number
+    TOTAL_FRAMES = len(song)
+    if LOOP_GLUE:
+        song = duplicateFirstFrameAtTheEnd(song)
 
     print("refresh")
 
@@ -190,6 +206,20 @@ def startServer():
     server.serve_forever()  # Blocks forever
 
 
+# -----------------------------------------------------------------
+# -----------------------------------------------------------------
+def duplicateFirstFrameAtTheEnd(song):
+    number_of_frames = len(song)
+
+    cloned_first_frame = []
+
+    for note in song[0]: # for notes in first frame
+        new_note = note.copy()
+        new_note[2] += number_of_frames * FRAMEHEIGHT_AS_SECONDS
+        new_note[3] += number_of_frames * FRAMEHEIGHT_AS_SECONDS
+        cloned_first_frame.append(new_note)
+    song.append(cloned_first_frame)
+    return song
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
 # Handy DRAW functions:
@@ -388,12 +418,14 @@ class Player(mglw.WindowConfig):
         BARGFX_MARGIN = 1
         WINDOW_HEIGHT = WINDOW_SIZE[1]
         SOUND_TRIGGER_ZONE = int(WINDOW_SIZE[1] / 10)
-        FRAMEHEIGHT_AS_SECONDS = BEATS_PER_FRAME / (
-            120 / 60)  # default for created midis is 120 BPM
+        
 
-        TOTAL_FRAMES = math.ceil(song_length / FRAMEHEIGHT_AS_SECONDS)
+        
 
-        self.scroller_y -= self.speed
+        
+
+
+        self.scroller_y += self.speed
         if self.scroller_y > WINDOW_HEIGHT * TOTAL_FRAMES:
             self.scroller_y = 0
         elif self.scroller_y < 0:
@@ -401,13 +433,14 @@ class Player(mglw.WindowConfig):
 
         # grab in wich "frame" of the movie whe are TODO: is this correct? Also, the last frame don't show
         position_in_frames = int(self.scroller_y / WINDOW_HEIGHT)
+        # print(position_in_frames)
         # grabing just the frames that that have a chance of drawing or making sound in this iteration
         notes_to_check = []
         notes_to_check += song[(position_in_frames - 1) %
                                (len(song) -
                                 1)]  # wrap around between valid index
-        notes_to_check += song[(position_in_frames) % (len(song) - 1)]
-        notes_to_check += song[(position_in_frames + 1) % (len(song) - 1)]
+        notes_to_check += song[(position_in_frames) % len(song)]
+        notes_to_check += song[(position_in_frames + 1) % len(song)]
 
         for note in notes_to_check:
             # fail safe check, skip note if it has something weird
@@ -432,12 +465,12 @@ class Player(mglw.WindowConfig):
                 # print(f"{x} {end - start}")
                 # pygame.draw.rect(screen, COLOR_WHITE, (x, start, x+BARGFX_WIDTH, end), 0)
                 x = int(x)
-                y = WINDOW_HEIGHT - int(end - self.scroller_y)
+                y = int(start - self.scroller_y)
                 w = int(BARGFX_WIDTH)
                 h = int(end - start)
 
                 for i in range(6):
-                    colors = np.append(colors, COLOR_CHANNELS[note[0]])
+                    colors = np.append(colors, COLOR_CHANNELS[note[0]%len(COLOR_CHANNELS)])
                 vertices = np.append(vertices, rect(x, y, w, h))
 
             #----- SEND MIDI
@@ -543,13 +576,12 @@ class Player(mglw.WindowConfig):
 
 def loadmidi(midifile):
     global song
-    global song_length
+    global TOTAL_FRAMES
     # --------------------------------------------------------
     # -----------  OPEN MIDI FILE AND PROCESS IT --------
     # ---------------------------------------------------------
     # open midifile and start to format to handy lists
     mid = mido.MidiFile(midifile)
-    song_length = mid.length
     song = []
     start_times = []
     for c in range(NUMBER_OF_CHANNELS):
@@ -577,14 +609,20 @@ def loadmidi(midifile):
                 frame_data = []
 
             if (msg.type == "note_on"):
+                # print("ON")
                 # print(f"save time on channel {msg.channel}:{msg.note} =
                 # {timer}")
                 start_times[msg.channel][msg.note] = timer
             elif (msg.type == 'note_off'):
+                # print("OFF")
                 start = start_times[msg.channel][msg.note]
                 end = timer
                 data = [msg.channel, msg.note, start, end, False, False]
+                # print(data)
                 frame_data.append(data)
+    #don't forget to add the last frame!
+    song.append(frame_data)
+
     # Check what is inside of this new data
     # for frame_index, frame in enumerate(song):
     #     print(f"---- {frame_index}")
@@ -592,9 +630,13 @@ def loadmidi(midifile):
     #         print(m)
     # quit()
 
-    # print(song)
-    # print(f"song_length: {song_length}")
-    # print(f"len(song): {len(song)}")
+    TOTAL_FRAMES = len(song)
+    if LOOP_GLUE:
+        song = duplicateFirstFrameAtTheEnd(song)
+    
+
+    print(song)
+    print(f"TOTAL_FRAMES: {TOTAL_FRAMES}")
     print("DONE CONVERTING MIDIFILE")
 
 
@@ -629,11 +671,11 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-m",
                         "--midifile",
-                        default="saved_midis/formula-galaxian.mid",
+                        default="saved_midis/test-simple.mid",
                         help="MIDI file to play")
     parser.add_argument('--output-device',
                         '-o',
-                        default='',
+                        default='OmniMIDI 1',
                         help='MIDI output device')
 
     args, extra_args = parser.parse_known_args()

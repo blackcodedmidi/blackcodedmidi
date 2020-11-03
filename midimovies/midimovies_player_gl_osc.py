@@ -34,8 +34,9 @@ _midiport_ = None
 
 # well not really seconds, but if a note is the size of the height of the window, the start is 0 and the end is 1
 # is seconds is the movie2frame is set at 60bpm
-FRAMEHEIGHT_AS_SECONDS = 1 
-PLAYER_SPEED = 0.2; # from 0 to 100 for a whole window height in each step
+FRAMEHEIGHT_AS_SECONDS = 1
+PLAYER_SPEED = 0.2
+# from 0 to 100 for a whole window height in each step
 
 TOTAL_FRAMES = None
 TOTAL_NOTES = 127
@@ -75,12 +76,7 @@ COLOR_HOLE = (0, 0, 0)
 #     [0.14901960784313725, 0.1607843137254902, 0.28627450980392155],
 # ]
 
-COLOR_CHANNELS = [
-    COLOR_RED,
-    COLOR_GREEN,
-    COLOR_BLUE,
-    COLOR_WHITE
-]
+COLOR_CHANNELS = [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_WHITE]
 # le queda cheto a betty boop
 # COLOR_CHANNELS = [
 #     (62, 14, 69),
@@ -190,11 +186,13 @@ def refreshSong(address, *args):
         song = duplicateFirstFrameAtTheEnd(song)
 
     print("refresh")
-    
+
+
 def setSpeed(address, *args):
     global PLAYER_SPEED
     speed = args[0]
     PLAYER_SPEED = speed
+
 
 def startServer():
     dispatcher = Dispatcher()
@@ -213,12 +211,14 @@ def duplicateFirstFrameAtTheEnd(song):
 
     cloned_first_frame = []
 
-    for note in song[0]: # for notes in first frame
+    for note in song[0]:  # for notes in first frame
         new_note = note.copy()
         new_note[0] = number_of_frames
         cloned_first_frame.append(new_note)
     song.append(cloned_first_frame)
     return song
+
+
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
 # Handy DRAW functions:
@@ -421,11 +421,11 @@ class Player(mglw.WindowConfig):
         BARGFX_MARGIN = 1
         WINDOW_HEIGHT = WINDOW_SIZE[1]
         SOUND_TRIGGER_ZONE = WINDOW_HEIGHT // 10
-        
-        self.scroller_y += (PLAYER_SPEED/100)*WINDOW_HEIGHT
+
+        self.scroller_y += (PLAYER_SPEED / 100) * WINDOW_HEIGHT
         if self.scroller_y > WINDOW_HEIGHT * TOTAL_FRAMES:
-            self.scroller_y = - SOUND_TRIGGER_ZONE # before was 0, and the first note doesn't played 
-        elif self.scroller_y < -SOUND_TRIGGER_ZONE: #before was 0, and the first note doesn't played  
+            self.scroller_y = 0  # before was 0, and the first note doesn't played
+        elif self.scroller_y < -SOUND_TRIGGER_ZONE:  #before was 0, and the first note doesn't played
             self.scroller_y = WINDOW_HEIGHT * TOTAL_FRAMES
 
         # grab in wich "frame" of the movie whe are TODO: is this correct? Also, the last frame don't show
@@ -448,11 +448,10 @@ class Player(mglw.WindowConfig):
             # [frame_index, channel, note, start, end, false, false]
 
             x = (note[2] - MIDINOTE_OFFSET) * (BARGFX_WIDTH + BARGFX_MARGIN)
-            start = note[0]*FRAMEHEIGHT_AS_SECONDS+note[3] 
-            end =   note[0]*FRAMEHEIGHT_AS_SECONDS+note[4] 
-            start = start * WINDOW_HEIGHT 
-            end =  end * WINDOW_HEIGHT
-            
+            start = note[0] * FRAMEHEIGHT_AS_SECONDS + note[3]
+            end = note[0] * FRAMEHEIGHT_AS_SECONDS + note[4]
+            start = start * WINDOW_HEIGHT
+            end = end * WINDOW_HEIGHT
 
             #----- DRAW NOTE
             if (start > self.scroller_y
@@ -467,7 +466,8 @@ class Player(mglw.WindowConfig):
                 h = int(end - start)
 
                 for i in range(6):
-                    colors = np.append(colors, COLOR_CHANNELS[note[1]%len(COLOR_CHANNELS)])
+                    colors = np.append(
+                        colors, COLOR_CHANNELS[note[1] % len(COLOR_CHANNELS)])
                 vertices = np.append(vertices, rect(x, y, w, h))
 
             #----- SEND MIDI
@@ -591,7 +591,7 @@ def loadmidi(midifile):
     print("STARTING RECONVERTING MIDIFILE TO SOMETHING MORE HANDY")
     # default midi is 120 BPM
     FRAME_AS_SECONDS = 60 / 60
-    current_frame = 0;
+    current_frame = 0
     for i, msg in enumerate(mid):
         if not isinstance(msg, mido.MetaMessage):
             # msg.time come as seconds
@@ -616,7 +616,10 @@ def loadmidi(midifile):
                 # print("OFF")
                 start = start_times[msg.channel][msg.note]
                 end = frame_timer
-                data = [current_frame, msg.channel, msg.note, start, end, False, False]
+                data = [
+                    current_frame, msg.channel, msg.note, start, end, False,
+                    False
+                ]
                 # print(data)
                 frame_data.append(data)
     #don't forget to add the last frame!
@@ -632,7 +635,6 @@ def loadmidi(midifile):
     TOTAL_FRAMES = len(song)
     if LOOP_GLUE:
         song = duplicateFirstFrameAtTheEnd(song)
-    
 
     # print(song)
     # print(f"TOTAL_FRAMES: {TOTAL_FRAMES}")
@@ -674,7 +676,7 @@ if __name__ == "__main__":
                         help="MIDI file to play")
     parser.add_argument('--output-device',
                         '-o',
-                        default='OmniMIDI 1',
+                        default='',
                         help='MIDI output device')
 
     args, extra_args = parser.parse_known_args()

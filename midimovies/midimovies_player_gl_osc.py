@@ -420,7 +420,7 @@ class Player(mglw.WindowConfig):
         BARGFX_WIDTH = 9
         BARGFX_MARGIN = 1
         WINDOW_HEIGHT = WINDOW_SIZE[1]
-        SOUND_TRIGGER_ZONE = int(WINDOW_SIZE[1] / 10)
+        SOUND_TRIGGER_ZONE = WINDOW_HEIGHT // 10
         
         self.scroller_y += (PLAYER_SPEED/100)*WINDOW_HEIGHT
         if self.scroller_y > WINDOW_HEIGHT * TOTAL_FRAMES:

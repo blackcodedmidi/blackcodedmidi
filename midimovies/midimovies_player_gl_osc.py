@@ -35,7 +35,7 @@ _midiport_ = None
 # well not really seconds, but if a note is the size of the height of the window, the start is 0 and the end is 1
 # is seconds is the movie2frame is set at 60bpm
 FRAMEHEIGHT_AS_SECONDS = 1 
-
+PLAYER_SPEED = 0.2; # from 0 to 100 for a whole window height in each step
 
 TOTAL_FRAMES = None
 TOTAL_NOTES = 127
@@ -190,11 +190,16 @@ def refreshSong(address, *args):
         song = duplicateFirstFrameAtTheEnd(song)
 
     print("refresh")
-
+    
+def setSpeed(address, *args):
+    global PLAYER_SPEED
+    speed = args[0]
+    PLAYER_SPEED = speed
 
 def startServer():
     dispatcher = Dispatcher()
     dispatcher.map("/refresh", refreshSong)
+    dispatcher.map("/speed", setSpeed)
     ip = "127.0.0.1"
     port = 1337
     server = BlockingOSCUDPServer((ip, port), dispatcher)
@@ -389,9 +394,13 @@ class Player(mglw.WindowConfig):
             self.program_simple, [(screen_quad, '2f 2f', 'in_pos', 'in_uv')])
 
     def mouse_position_event(self, x, y, dx, dy):
-        self.speed = WINDOW_SIZE[1] * (y / WINDOW_SIZE[1]) * 2.01
+        global PLAYER_SPEED
+
+        if (x < 80):
+            PLAYER_SPEED = (y / WINDOW_SIZE[1]) * 100.2
 
     def render(self, time, frametime):
+        global PLAYER_SPEED
 
         vertices = np.array([
             # x, y
@@ -413,7 +422,7 @@ class Player(mglw.WindowConfig):
         WINDOW_HEIGHT = WINDOW_SIZE[1]
         SOUND_TRIGGER_ZONE = int(WINDOW_SIZE[1] / 10)
         
-        self.scroller_y += self.speed
+        self.scroller_y += (PLAYER_SPEED/100)*WINDOW_HEIGHT
         if self.scroller_y > WINDOW_HEIGHT * TOTAL_FRAMES:
             self.scroller_y = - SOUND_TRIGGER_ZONE # before was 0, and the first note doesn't played 
         elif self.scroller_y < -SOUND_TRIGGER_ZONE: #before was 0, and the first note doesn't played  
@@ -430,20 +439,20 @@ class Player(mglw.WindowConfig):
 
         for note in notes_to_check:
             # fail safe check, skip note if it has something weird
-            baddata = False
-            for d in note:
-                if d is None:
-                    baddata = True
-            if baddata:
+            if len(note) != 7:
+                print("-- FAIL -- ")
+                print(f"note: {note}")
                 continue
 
             # converting note's start and end values to screen's height porcentage
             # [frame_index, channel, note, start, end, false, false]
+
             x = (note[2] - MIDINOTE_OFFSET) * (BARGFX_WIDTH + BARGFX_MARGIN)
             start = note[0]*FRAMEHEIGHT_AS_SECONDS+note[3] 
             end =   note[0]*FRAMEHEIGHT_AS_SECONDS+note[4] 
             start = start * WINDOW_HEIGHT 
             end =  end * WINDOW_HEIGHT
+            
 
             #----- DRAW NOTE
             if (start > self.scroller_y

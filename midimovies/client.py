@@ -16,47 +16,18 @@ def sine(t):
     return math.sin(t) * 0.5 + 0.5
 
 
-# song = [[[4, 58, 0.234375, 0.265625, False, False],
-#          [4, 71, 0.234375, 0.265625, False, False],
-#          [4, 59, 0.21875, 0.28125, False, False],
-#          [4, 70, 0.21875, 0.28125, False, False],
-#          [4, 60, 0.2109375, 0.2890625, False, False],
-#          [4, 69, 0.2109375, 0.2890625, False, False],
-#          [4, 61, 0.203125, 0.296875, False, False],
-#          [4, 62, 0.203125, 0.296875, False, False],
-#          [4, 67, 0.203125, 0.296875, False, False],
-#          [4, 68, 0.203125, 0.296875, False, False],
-#          [4, 63, 0.1953125, 0.3046875, False, False],
-#          [4, 64, 0.1953125, 0.3046875, False, False],
-#          [4, 65, 0.1953125, 0.3046875, False, False],
-#          [4, 66, 0.1953125, 0.3046875, False, False]],
-#         [[4, 58, 0.734375, 0.765625, False, False],
-#          [4, 71, 0.734375, 0.765625, False, False],
-#          [4, 59, 0.71875, 0.78125, False, False],
-#          [4, 70, 0.71875, 0.78125, False, False],
-#          [4, 60, 0.7109375, 0.7890625, False, False],
-#          [4, 69, 0.7109375, 0.7890625, False, False],
-#          [4, 61, 0.703125, 0.796875, False, False],
-#          [4, 62, 0.703125, 0.796875, False, False],
-#          [4, 67, 0.703125, 0.796875, False, False],
-#          [4, 68, 0.703125, 0.796875, False, False],
-#          [4, 63, 0.6953125, 0.8046875, False, False],
-#          [4, 64, 0.6953125, 0.8046875, False, False],
-#          [4, 65, 0.6953125, 0.8046875, False, False],
-#          [4, 66, 0.6953125, 0.8046875, False, False]]]
-# song = []
-
 
 def build_song():
     song = []
-    for f in range(20):
+    vertical = 64
+    for f in range(10):
         frame = []
-        for t in range(64):
-            for n in range(8):
-                note = 20 + f*3 + (t % 8) + sine(t) * 20
+        for t in range(vertical):
+            for n in range(1):
+                note = 28 + f%2 * 6 + f%4 * 12 + f%2 * sine(f*0.025)*12
                 channel = t
-                start = (t/65+ f)
-                end = (t/65+ f) + 0.02
+                start = (t/vertical+ f)
+                end = (t/vertical+ f) + 0.01 + sine(t)*0.08 
                 frame.append([
                     f, 
                     int(channel) % 10,

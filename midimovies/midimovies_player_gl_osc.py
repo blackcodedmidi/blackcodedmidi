@@ -475,29 +475,54 @@ class Player(mglw.WindowConfig):
             # Main idea is that note[4] is True is the note has already started playing
             # and note[5] is True is the note has already trigger its end state
             # This was for something like stoping the sound to trigger itself multiple times, or something like that.
-            if note[5] == False:
-                if start < self.scroller_y + SOUND_TRIGGER_ZONE:
-                    note[5] = True
-                    # I think this is used only for the drawing of the piano keys at bottom
-                    channels_notes_isplaying[note[1]][note[2]] = True
-                    if OPTIONS_SENDMIDI:
-                        msg = mido.Message("note_on",
-                                           channel=note[1],
-                                           note=note[2])
-                        _midiport_.send(msg)
-            elif note[6] == False:
-                if end < self.scroller_y + SOUND_TRIGGER_ZONE:
-                    note[6] = True
-                    channels_notes_isplaying[note[1]][note[2]] = False
-                    if OPTIONS_SENDMIDI:
-                        msg = mido.Message("note_off",
-                                           channel=note[1],
-                                           note=note[2])
-                        _midiport_.send(msg)
-            elif start > self.scroller_y + SOUND_TRIGGER_ZONE and end > self.scroller_y + SOUND_TRIGGER_ZONE:
-                # This resets the triggering ability of the notes, when the pianoroll loops, and the movie start again
-                note[5] = False
-                note[6] = False
+            if PLAYER_SPEED >= 0: 
+                if note[5] == False:
+                    if start < self.scroller_y + SOUND_TRIGGER_ZONE:
+                        note[5] = True
+                        # I think this is used only for the drawing of the piano keys at bottom
+                        channels_notes_isplaying[note[1]][note[2]] = True
+                        if OPTIONS_SENDMIDI:
+                            msg = mido.Message("note_on",
+                                               channel=note[1],
+                                               note=note[2])
+                            _midiport_.send(msg)
+                elif note[6] == False:
+                    if end < self.scroller_y + SOUND_TRIGGER_ZONE:
+                        note[6] = True
+                        channels_notes_isplaying[note[1]][note[2]] = False
+                        if OPTIONS_SENDMIDI:
+                            msg = mido.Message("note_off",
+                                               channel=note[1],
+                                               note=note[2])
+                            _midiport_.send(msg)
+                elif start > self.scroller_y + SOUND_TRIGGER_ZONE and end > self.scroller_y + SOUND_TRIGGER_ZONE:
+                    # This resets the triggering ability of the notes, when the pianoroll loops, and the movie start again
+                    note[5] = False
+                    note[6] = False
+            else:
+                if note[6] == False:
+                    if end > self.scroller_y + SOUND_TRIGGER_ZONE:
+                        note[6] = True
+                        # I think this is used only for the drawing of the piano keys at bottom
+                        channels_notes_isplaying[note[1]][note[2]] = True
+                        if OPTIONS_SENDMIDI:
+                            msg = mido.Message("note_on",
+                                               channel=note[1],
+                                               note=note[2])
+                            _midiport_.send(msg)
+                elif note[5] == False:
+                    if start > self.scroller_y + SOUND_TRIGGER_ZONE:
+                        note[5] = True
+                        channels_notes_isplaying[note[1]][note[2]] = False
+                        if OPTIONS_SENDMIDI:
+                            msg = mido.Message("note_off",
+                                               channel=note[1],
+                                               note=note[2])
+                            _midiport_.send(msg)
+                elif start < self.scroller_y + SOUND_TRIGGER_ZONE and end < self.scroller_y + SOUND_TRIGGER_ZONE:
+                    # This resets the triggering ability of the notes, when the pianoroll loops, and the movie start again
+                    note[5] = False
+                    note[6] = False
 
         for piano_key in range(127):
             color = None

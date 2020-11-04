@@ -23,7 +23,7 @@ o = NetAddr.new("127.0.0.1", 1337);
 //       expects to return a list of [note, channel, duration]
 // - frames: number of song frames (e.g. 64)
 // - tpb: ticks per frame (resolution) (e.g. 64)
-~updateSong = { |tickFunc, frames, tpf|
+~updateSong = { |tickFn, frames, tpf|
 	var song = [];
 
 	frames.do { |f|

@@ -68,6 +68,8 @@ o = NetAddr.new("127.0.0.1", 1337);
 
 // control player speed
 o.sendMsg("/speed", 1);
+// second argument is tween-time between current speed and target speed
+o.sendMsg("/speed", 1, 2);
 
 // create a new song
 (

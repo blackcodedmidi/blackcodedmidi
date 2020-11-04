@@ -26,6 +26,7 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 # -----------------------------------------------------------------
 
 WINDOW_SIZE = (878, 600)
+mouse_pos = WINDOW_SIZE
 
 LOOP_GLUE = True
 
@@ -35,7 +36,10 @@ _midiport_ = None
 # well not really seconds, but if a note is the size of the height of the window, the start is 0 and the end is 1
 # is seconds is the movie2frame is set at 60bpm
 FRAMEHEIGHT_AS_SECONDS = 1
-PLAYER_SPEED = 0.2
+player_speed = 0.2
+player_targetspeed = player_speed
+player_targetspeed_step = 0
+player_speed_tweening = False
 # from 0 to 100 for a whole window height in each step
 
 TOTAL_FRAMES = None
@@ -188,16 +192,54 @@ def refreshSong(address, *args):
     print("refresh")
 
 
-def setSpeed(address, *args):
-    global PLAYER_SPEED
-    speed = args[0]
-    PLAYER_SPEED = speed
+def setTagetSpeed(address, *args):
+    global player_speed
+    global player_speed_tweening
+    global player_targetspeed
+    global player_targetspeed_tweentime
+    global player_targetspeed_step
+    
+    if len(args) > 1:        
+        player_targetspeed = args[0]
+        player_targetspeed_tweentime = args[1]
+        if player_targetspeed_tweentime in [0, None]:
+            player_speed = args[0]
+            player_speed_tweening = False
+        else:
+            player_targetspeed_step = abs(player_speed - player_targetspeed)/player_targetspeed_tweentime;
+            player_targetspeed_step *= 1 if (player_targetspeed - player_speed > 0) else -1
+            player_speed_tweening = True
+    else:
+        player_speed = args[0]
+        player_speed_tweening = False
+
+def tweenSpeed(frametime):
+    global player_speed
+    global player_speed_tweening
+    global player_targetspeed
+    global player_targetspeed_step
+
+    player_speed += player_targetspeed_step*frametime
+
+    reached_target = False
+    if player_targetspeed_step > 0:
+        if player_speed > player_targetspeed:
+            reached_target = True
+    elif player_speed < player_targetspeed:
+            reached_target = True
+
+    if reached_target:
+        player_speed = player_targetspeed
+        player_speed_tweening = False
+
+    return player_speed
+
 
 
 def startServer():
     dispatcher = Dispatcher()
     dispatcher.map("/refresh", refreshSong)
-    dispatcher.map("/speed", setSpeed)
+    dispatcher.map("/speed", setTagetSpeed)
     ip = "127.0.0.1"
     port = 1337
     server = BlockingOSCUDPServer((ip, port), dispatcher)
@@ -242,7 +284,6 @@ class Player(mglw.WindowConfig):
     window_size = WINDOW_SIZE
     aspect_ratio = WINDOW_SIZE[0] / WINDOW_SIZE[1]
     scroller_y = 0
-    speed = 0
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -394,13 +435,18 @@ class Player(mglw.WindowConfig):
             self.program_simple, [(screen_quad, '2f 2f', 'in_pos', 'in_uv')])
 
     def mouse_position_event(self, x, y, dx, dy):
-        global PLAYER_SPEED
-
-        if (x < 80):
-            PLAYER_SPEED = (y / WINDOW_SIZE[1]) * 100.2
+        global mouse_pos
+        mouse_pos = [x, y]
 
     def render(self, time, frametime):
-        global PLAYER_SPEED
+        global player_speed
+        global player_speed_tweening
+        global mouse_pos
+
+        if (mouse_pos[0] < 80):
+            player_speed = (mouse_pos[1] / WINDOW_SIZE[1]) * 100.2
+        elif player_speed_tweening:
+            player_speed = tweenSpeed(frametime)
 
         vertices = np.array([
             # x, y
@@ -422,7 +468,7 @@ class Player(mglw.WindowConfig):
         WINDOW_HEIGHT = WINDOW_SIZE[1]
         SOUND_TRIGGER_ZONE = WINDOW_HEIGHT // 10
 
-        self.scroller_y += (PLAYER_SPEED / 100) * WINDOW_HEIGHT
+        self.scroller_y += (player_speed / 100) * WINDOW_HEIGHT
         if self.scroller_y > WINDOW_HEIGHT * TOTAL_FRAMES:
             self.scroller_y = 0  # before was 0, and the first note doesn't played
         elif self.scroller_y < -SOUND_TRIGGER_ZONE:  #before was 0, and the first note doesn't played
@@ -475,7 +521,7 @@ class Player(mglw.WindowConfig):
             # Main idea is that note[4] is True is the note has already started playing
             # and note[5] is True is the note has already trigger its end state
             # This was for something like stoping the sound to trigger itself multiple times, or something like that.
-            if PLAYER_SPEED >= 0: 
+            if player_speed >= 0: 
                 if note[5] == False:
                     if start < self.scroller_y + SOUND_TRIGGER_ZONE:
                         note[5] = True
@@ -692,6 +738,9 @@ def start_player(midifile=None, output_device=None, mglw_args=None):
 if __name__ == "__main__":
     import argparse
 
+    mido.get_output_names()
+
+
     parser = argparse.ArgumentParser(
         description="BlackolaGL MIDI player",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -701,7 +750,7 @@ if __name__ == "__main__":
                         help="MIDI file to play")
     parser.add_argument('--output-device',
                         '-o',
-                        default='',
+                        default='OmniMIDI 1',
                         help='MIDI output device')
 
     args, extra_args = parser.parse_known_args()

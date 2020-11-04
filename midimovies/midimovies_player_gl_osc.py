@@ -32,6 +32,7 @@ LOOP_GLUE = True
 
 OPTIONS_SENDMIDI = True
 _midiport_ = None
+master_volume = 1.0
 
 # well not really seconds, but if a note is the size of the height of the window, the start is 0 and the end is 1
 # is seconds is the movie2frame is set at 60bpm
@@ -213,6 +214,11 @@ def setTagetSpeed(address, *args):
         player_speed = args[0]
         player_speed_tweening = False
 
+def setMasterVolume(address, *args):
+    global master_volume
+    master_volume = np.clip(float(args[0]),0,1)
+
+
 def tweenSpeed(frametime):
     global player_speed
     global player_speed_tweening
@@ -240,6 +246,7 @@ def startServer():
     dispatcher = Dispatcher()
     dispatcher.map("/refresh", refreshSong)
     dispatcher.map("/speed", setTagetSpeed)
+    dispatcher.map("/master", setMasterVolume)    
     ip = "127.0.0.1"
     port = 1337
     server = BlockingOSCUDPServer((ip, port), dispatcher)
@@ -442,6 +449,7 @@ class Player(mglw.WindowConfig):
         global player_speed
         global player_speed_tweening
         global mouse_pos
+        global master_volume
 
         if (mouse_pos[0] < 80):
             player_speed = (mouse_pos[1] / WINDOW_SIZE[1]) * 100.2
@@ -485,19 +493,23 @@ class Player(mglw.WindowConfig):
 
         for note in notes_to_check:
             # fail safe check, skip note if it has something weird
-            if len(note) != 7:
+            if len(note) != 8:
                 print("-- FAIL -- ")
                 print(f"note: {note}")
                 continue
 
             # converting note's start and end values to screen's height porcentage
-            # [frame_index, channel, note, start, end, false, false]
+            # [frame_index, channel, note, velocity, start, end, false, false]
 
+            note_key = note[2]
+            channel = note[1]
             x = (note[2] - MIDINOTE_OFFSET) * (BARGFX_WIDTH + BARGFX_MARGIN)
-            start = note[0] * FRAMEHEIGHT_AS_SECONDS + note[3]
-            end = note[0] * FRAMEHEIGHT_AS_SECONDS + note[4]
+            start = note[0] * FRAMEHEIGHT_AS_SECONDS + note[4]
+            end = note[0] * FRAMEHEIGHT_AS_SECONDS + note[5]
             start = start * WINDOW_HEIGHT
             end = end * WINDOW_HEIGHT
+            velocity = int(note[3] * master_volume)
+
 
             #----- DRAW NOTE
             if (start > self.scroller_y
@@ -518,57 +530,59 @@ class Player(mglw.WindowConfig):
 
             #----- SEND MIDI
             # TODO: this could be clearer.
-            # Main idea is that note[4] is True is the note has already started playing
+            # Main idea is that note[6] is True is the note has already started playing
             # and note[5] is True is the note has already trigger its end state
             # This was for something like stoping the sound to trigger itself multiple times, or something like that.
             if player_speed >= 0: 
-                if note[5] == False:
+                if note[6] == False:
                     if start < self.scroller_y + SOUND_TRIGGER_ZONE:
-                        note[5] = True
+                        note[6] = True
                         # I think this is used only for the drawing of the piano keys at bottom
-                        channels_notes_isplaying[note[1]][note[2]] = True
+                        channels_notes_isplaying[channel][note_key] = True
                         if OPTIONS_SENDMIDI:
                             msg = mido.Message("note_on",
-                                               channel=note[1],
-                                               note=note[2])
+                                               channel=channel,
+                                               note=note_key,
+                                               velocity=velocity)
                             _midiport_.send(msg)
-                elif note[6] == False:
+                elif note[7] == False:
                     if end < self.scroller_y + SOUND_TRIGGER_ZONE:
-                        note[6] = True
-                        channels_notes_isplaying[note[1]][note[2]] = False
+                        note[7] = True
+                        channels_notes_isplaying[channel][note_key] = False
                         if OPTIONS_SENDMIDI:
                             msg = mido.Message("note_off",
-                                               channel=note[1],
-                                               note=note[2])
+                                               channel=channel,
+                                               note=note_key)
                             _midiport_.send(msg)
                 elif start > self.scroller_y + SOUND_TRIGGER_ZONE and end > self.scroller_y + SOUND_TRIGGER_ZONE:
                     # This resets the triggering ability of the notes, when the pianoroll loops, and the movie start again
-                    note[5] = False
                     note[6] = False
+                    note[7] = False
             else:
-                if note[6] == False:
+                if note[7] == False:
                     if end > self.scroller_y + SOUND_TRIGGER_ZONE:
-                        note[6] = True
+                        note[7] = True
                         # I think this is used only for the drawing of the piano keys at bottom
-                        channels_notes_isplaying[note[1]][note[2]] = True
+                        channels_notes_isplaying[channel][note_key] = True
                         if OPTIONS_SENDMIDI:
                             msg = mido.Message("note_on",
-                                               channel=note[1],
-                                               note=note[2])
+                                               channel=channel,
+                                               note=note_key,
+                                               velocity=velocity)
                             _midiport_.send(msg)
-                elif note[5] == False:
+                elif note[6] == False:
                     if start > self.scroller_y + SOUND_TRIGGER_ZONE:
-                        note[5] = True
-                        channels_notes_isplaying[note[1]][note[2]] = False
+                        note[6] = True
+                        channels_notes_isplaying[channel][note_key] = False
                         if OPTIONS_SENDMIDI:
                             msg = mido.Message("note_off",
-                                               channel=note[1],
-                                               note=note[2])
+                                               channel=channel,
+                                               note=note_key)
                             _midiport_.send(msg)
                 elif start < self.scroller_y + SOUND_TRIGGER_ZONE and end < self.scroller_y + SOUND_TRIGGER_ZONE:
                     # This resets the triggering ability of the notes, when the pianoroll loops, and the movie start again
-                    note[5] = False
                     note[6] = False
+                    note[7] = False
 
         for piano_key in range(127):
             color = None
@@ -688,7 +702,7 @@ def loadmidi(midifile):
                 start = start_times[msg.channel][msg.note]
                 end = frame_timer
                 data = [
-                    current_frame, msg.channel, msg.note, start, end, False,
+                    current_frame, msg.channel, msg.note, 64, start, end, False,
                     False
                 ]
                 # print(data)

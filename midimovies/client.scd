@@ -23,36 +23,41 @@ o = NetAddr.new("127.0.0.1", 1337);
 //       expects to return a list of [note, channel, duration]
 // - frames: number of song frames (e.g. 64)
 // - tpb: ticks per frame (resolution) (e.g. 64)
-~updateSong = { |tickFn, frames, tpf|
+// - npf: notes per tick (e.g. 4)
+~updateSong = { |tickFn, frames, tpf, npt|
 	var song = [];
 
 	frames.do { |f|
 		var frame = [];
 
 		tpf.do { |t|
-			var tickMsg, msg;
-			var note, channel, duration;
-			var start, end;
+			npt.do{ |n|
+				var tickMsg, msg;
+				var note, channel, duration, velocity;
+				var start, end;
 
-			tickMsg = tickFn.value(f, t);
-			note = tickMsg[0];
-			channel = tickMsg[1];
-			duration = tickMsg[2];
+				tickMsg = tickFn.value(f, t, n);
+				note = tickMsg[0];
+				channel = tickMsg[1];
+				duration = tickMsg[2];
+				velocity = tickMsg[3];
 
-			start = t / tpf;
-			end = ((t + duration) / tpf) + 0.01;  // +0.01 ???
+				start = t / tpf;
+				end = ((t + duration) / tpf) + 0.01;  // +0.01 ???
 
-			msg = [
-				f,
-				channel.asInteger % ~maxChannels,
-				note.asInteger % ~maxNotes,
-				start % 1,
-				end % 1,
-				'False',
-				'False'
-			];
+				msg = [
+					f,
+					channel.asInteger % ~maxChannels,
+					note.asInteger % ~maxNotes,
+					velocity.clip(0, 127),
+					start.clip(0, 1),
+					end.clip(0, 2),
+					'False',
+					'False'
+				];
 
-			frame = frame.add(msg);
+				frame = frame.add(msg);
+			};
 		};
 
 		song = song.add(frame);
@@ -69,15 +74,21 @@ o = NetAddr.new("127.0.0.1", 1337);
 // control player speed
 o.sendMsg("/speed", 1);
 // second argument is tween-time between current speed and target speed
-o.sendMsg("/speed", 1, 2);
+o.sendMsg("/speed", 100, 2);
+// somewhat a master volume, from 0 to 1
+o.sendMsg("/master", 1);
+
+
 
 // create a new song
 (
-~updateSong.({ |f, t|
-	var note, chan, dur;
+~updateSong.({ |f, t, n|
+	var note, chan, dur, vel;
 	note = 50 + (f*3) + (sin(t/10)*5) + sin(t/3) + (sin(t/8)*20);
+	note = note + n;
 	chan = t;
-	dur = 1;
-	[note, chan, dur]
-}, 64, 64);
+	dur = 10;
+	vel = t*5;
+	[note, chan, dur, vel]
+}, 64, 64, 2);
 )

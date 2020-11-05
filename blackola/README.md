@@ -1,8 +1,28 @@
 # midimovies
 
-## Linux
+## Install
 
-To start Timidity in daemon mode:
+### Linux
+
+Create virtualenv and activate it
+
+```
+virtualenv .venv
+source .venv/bin/activate
+```
+
+Now install dependencies:
+
+```
+sudo apt install rtmidi timidity
+pip install -r requirements.txt
+```
+
+## Usage
+
+### Linux
+
+To start Timidity, run in a separate terminal:
 
 ```bash
 timidity -iA
@@ -25,14 +45,8 @@ client 129: 'TiMidity' [type=user,pid=32358]
     3 'TiMidity port 3 '
 ```
 
-To play a MIDI using the player, run:
+To start Blackola and connect it to TiMidity, run:
 
 ```bash
-midimovies_player.py output.mid
-```
-
-It will try to use the first output device found. You can specify another one using the `-o` option:
-
-```bash
-midimovies_player.py -o "TiMidity:TiMidity port 0 129:0" output.mid
+python blackola.py -o 'TiMidity port 0'
 ```

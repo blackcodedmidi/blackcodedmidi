@@ -7,6 +7,88 @@ import sys
 # ------------------------------------------------------------------------
 # ------------------------- GENERATE MIDI --------------------------------
 # ------------------------------------------------------------------------
+def duplicateFirstFrameAtTheEnd(song):
+    number_of_frames = len(song)
+
+    cloned_first_frame = []
+
+    for note in song[0]:  # for notes in first frame
+        new_note = note.copy()
+        new_note[0] = number_of_frames
+        cloned_first_frame.append(new_note)
+    song.append(cloned_first_frame)
+    return song
+def generate_list_from_midifile(midifile):
+    TOTAL_NOTES = 127
+    NUMBER_OF_CHANNELS = 16
+    # --------------------------------------------------------
+    # -----------  OPEN MIDI FILE AND PROCESS IT --------
+    # ---------------------------------------------------------
+    # open midifile and start to format to handy lists
+    mid = mido.MidiFile(f"{midifile}.mid")
+    song = []
+    start_times = []
+    for c in range(NUMBER_OF_CHANNELS):
+        start_times.append([None] * TOTAL_NOTES)
+    timer = 0
+    frame_data = []
+    frame_timer = 0
+    # formatea la data midi a algo con menos cancer. para que cada nota tenga
+    # su start y end
+    print("STARTING RECONVERTING MIDIFILE TO SOMETHING MORE HANDY")
+    # default midi is 120 BPM
+    FRAME_AS_SECONDS = 60 / 60
+    current_frame = 0
+    for i, msg in enumerate(mid):
+        if not isinstance(msg, mido.MetaMessage):
+            # msg.time come as seconds
+            timer += msg.time
+            frame_timer += msg.time
+
+            if frame_timer > FRAME_AS_SECONDS:  # it's a new film frame!
+                current_frame += 1
+                # grab the extra time that pass since the start of this new
+                # frame
+                frame_timer = frame_timer - FRAME_AS_SECONDS
+                # add frame to the song
+                song.append(frame_data)
+                frame_data = []
+
+            if (msg.type == "note_on"):
+                # print("ON")
+                # print(f"save time on channel {msg.channel}:{msg.note} =
+                # {timer}")
+                start_times[msg.channel][msg.note] = frame_timer
+            elif (msg.type == 'note_off'):
+                # print("OFF")
+                start = start_times[msg.channel][msg.note]
+                end = frame_timer
+                data = [
+                    current_frame, msg.channel, msg.note, 64, start, end, False,
+                    False
+                ]
+                # print(data)
+                frame_data.append(data)
+    #don't forget to add the last frame!
+    song.append(frame_data)
+
+    # Check what is inside of this new data
+    # for frame_index, frame in enumerate(song):
+    #     print(f"---- {frame_index}")
+    #     for m in frame:
+    #         print(m)
+    # quit()
+
+    if True: #LOOP_GLUE
+        song = duplicateFirstFrameAtTheEnd(song)
+
+    # print(song)
+    # print(f"TOTAL_FRAMES: {TOTAL_FRAMES}")
+    f = open(f"{midifile}.txt", "w+")
+    f.write(str(song))
+    f.close()
+
+    print("DONE CONVERTING MIDIFILE")
 def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_name="output", nancarrow=True, clone_multiplier=1):
 
     MODE_NANCARROW = nancarrow
@@ -88,12 +170,14 @@ def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_nam
                         grey = ((r + g + b) / 3)/255
 
 
-                        if grey <= 0.5:
+                        if grey >= 0.9:
+                            pixel_color = None
+                        elif grey <= 0.2:
                             pixel_color = 1
-                        elif grey <= 0.9:
+                        elif grey <= 0.6:
                             pixel_color = 2
                         else:
-                            pixel_color = None
+                            pixel_color = 3
 
                         # if grey <= 0.01:
                         #     pixel_color = 1
@@ -108,6 +192,7 @@ def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_nam
 
                     else:
                         grey = r * 0.3 + g * 0.59 + b * 0.11
+
                         if r > 100:
                             if g > 100:
                                 pixel_color = 3
@@ -119,7 +204,8 @@ def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_nam
                             pixel_color = 2
                         else:
                             pixel_color = None
-                        
+
+                                                
                         # # for betty boop
                         # if grey < 20:
                         # 	pixel_color = None
@@ -172,5 +258,6 @@ if __name__ == "__main__":
     try:
         framesfolder_name = sys.argv[1]
     except:
-        framesfolder_name = "test-arrow"
-    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_multiplier=1)
+        framesfolder_name = "test-simple"
+    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_multiplier=1, output_midifile_name=framesfolder_name)
+    generate_list_from_midifile(framesfolder_name)

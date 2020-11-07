@@ -83,6 +83,10 @@ o.sendMsg("/refresh", "galaxian");
 o.sendMsg("/refresh", "chihuahua");
 // distort: 0 is none, 1 was the usual amount. It can be negative!
 o.sendMsg("/distort", 0);
+//set channel palette: 'rgb', 'hip', "1bit", 'cute', 'vapor', 'pure', 'cga', full list in blackola.py
+o.sendMsg("/color", 'pure');
+//toggle clean bg
+o.sendMsg("/clean");
 
 
 // create a new song and load it to the player

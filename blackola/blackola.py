@@ -16,8 +16,6 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
-
-
 WINDOW_SIZE = (878, 600)
 mouse_pos = WINDOW_SIZE
 
@@ -52,6 +50,28 @@ for i in range(NUMBER_OF_CHANNELS):
         temp_notes_state.append(False)
     channels_notes_isplaying.append(temp_notes_state)
 
+# --------------------------------------
+# SHADER UNIFORMS and STUFF
+# --------------------------------------
+uniform_distort = 0.0
+clean_background = True
+# --------------------------------
+# COLOR FOR EVERY CHANNEL
+# --------------------------------
+def color_from_255(color_array):
+	new_array = []
+	for color in color_array:
+		new_array.append([color[0]/255, color[1]/255, color[2]/255])
+	return new_array
+def color_from_hex(color_array):
+	new_array = []
+	for color in color_array:
+		r = int(color[0:2], 16)
+		g = int(color[2:4], 16)
+		b = int(color[4:6], 16)
+		new_array.append([r/255, g/255, b/255])
+	return new_array
+
 COLOR_BLACK = (0, 0, 0)
 COLOR_RED = (1, 0, 0)
 COLOR_GREEN = (0, 1, 0)
@@ -59,37 +79,42 @@ COLOR_BLUE = (0, 0, 1)
 COLOR_YELLOW = (1, 1, 0)
 COLOR_WHITE = (1, 1, 1)
 COLOR_HOLE = (0, 0, 0)
-# paleta arcoiris hipster
-# COLOR_CHANNELS = [
-#     [0.01568627450980392, 0.32941176470588235, 0.34901960784313724],
-#     [0.03137254901960784, 0.45098039215686275, 0.3254901960784314],
-#     [0.08235294117647059, 0.7607843137254902, 0.5254901960784314],
-#     [0.6705882352941176, 0.8509803921568627, 0.42745098039215684],
-#     [0.984313725490196, 0.7490196078431373, 0.32941176470588235],
-#     [0.9333333333333333, 0.4196078431372549, 0.23137254901960785],
-#     [0.9254901960784314, 0.058823529411764705, 0.2784313725490196],
-#     [0.6274509803921569, 0.17254901960784313, 0.36470588235294116],
-#     [0.4392156862745098, 0.01568627450980392, 0.3764705882352941],
-#     [0.00784313725490196, 0.17254901960784313, 0.47843137254901963],
-#     [0.14901960784313725, 0.1607843137254902, 0.28627450980392155],
-# ]
-
-COLOR_CHANNELS = [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_WHITE]
-# le queda cheto a betty boop
-# COLOR_CHANNELS = [
-#     (62, 14, 69),
-#     (76, 94, 176),
-#     (126, 169, 141),
-#     (172, 215, 153),
-#     (218, 237, 210),
-#     (255, 255, 255),
-# ]
-
-# --
-# shaders uniforms
-uniform_distort = 0.0
-
-
+COLOR_DICTIONARY =	{
+	'rgbw': [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_WHITE],
+	'rgb': [COLOR_RED, COLOR_GREEN, COLOR_BLUE],
+	'1bit': [COLOR_WHITE],
+	'steven': color_from_hex(["f72585","7209b7","3a0ca3","4361ee","4cc9f0"]),
+	'paleta': color_from_hex(["e63946","f1faee","a8dadc","457b9d","1d3557"]),
+	'cute': color_from_hex(["ff595e","ffca3a","8ac926","1982c4","6a4c93"]),
+	'pure': color_from_hex(["ff0000","ffff00","00ff00","00ffff","0000ff","ff00ff","ffffff"]),
+ 	'vapor': color_from_hex(["7400b8","6930c3","5e60ce","5390d9","21aad4","56cfe1","72efdd","80ffdb", "72efdd", "56cfe1", "21aad4", "5390d9", "5e60ce", "6930c3", "7400b8"]),
+ 	'cgafull': color_from_hex(["000000","0000aa","00aa00","00aaaa","aa0000","aa00aa","aa5500","aaaaaa","555555","5555ff","55ff55","55ffff","ff5555","ff55ff","ffff55","ffffff"]),
+ 	'cga': color_from_hex(["0000aa","00aa00","00aaaa","aa0000","aa00aa","aa5500","aaaaaa","555555","5555ff","55ff55","55ffff","ff5555","ff55ff","ffff55","ffffff"]),
+ 	'cgatiny': color_from_hex(["ff55ff","55ffff","ffffff"]),
+ 	'hip': [
+	    [0.01568627450980392, 0.32941176470588235, 0.34901960784313724],
+	    [0.03137254901960784, 0.45098039215686275, 0.3254901960784314],
+	    [0.08235294117647059, 0.7607843137254902, 0.5254901960784314],
+	    [0.6705882352941176, 0.8509803921568627, 0.42745098039215684],
+	    [0.984313725490196, 0.7490196078431373, 0.32941176470588235],
+	    [0.9333333333333333, 0.4196078431372549, 0.23137254901960785],
+	    [0.9254901960784314, 0.058823529411764705, 0.2784313725490196],
+	    [0.6274509803921569, 0.17254901960784313, 0.36470588235294116],
+	    [0.4392156862745098, 0.01568627450980392, 0.3764705882352941],
+	    [0.00784313725490196, 0.17254901960784313, 0.47843137254901963],
+	    [0.14901960784313725, 0.1607843137254902, 0.28627450980392155],
+	],
+	'boop': color_from_255([
+		[62, 14, 69],
+	    [76, 94, 176],
+	    [126, 169, 141],
+	    [172, 215, 153],
+	    [218, 237, 210],
+	    [255, 255, 255]
+    ]),
+}
+COLOR_CHANNELS = COLOR_DICTIONARY["rgbw"]
+# ----------------------------------------------------------------
 
 
 
@@ -194,6 +219,19 @@ def setShaderDistortion(address, *args):
 	global uniform_distort
 	uniform_distort = float(args[0])
 
+def toggleCleanBg(address, *args):
+	global clean_background
+	clean_background = not clean_background
+
+def setColors(address, *args):
+	global COLOR_DICTIONARY
+	global COLOR_CHANNELS
+
+	try:
+		COLOR_CHANNELS = COLOR_DICTIONARY[args[0]]
+	except:
+		print(f"Failed loading colors: {args[0]}")
+
 
 def setTagetSpeed(address, *args):
     global player_speed
@@ -242,14 +280,14 @@ def tweenSpeed(frametime):
 
     return player_speed
 
-
-
 def startServer():
     dispatcher = Dispatcher()
     dispatcher.map("/refresh", refreshSong)
     dispatcher.map("/speed", setTagetSpeed)
     dispatcher.map("/master", setMasterVolume) 
-    dispatcher.map("/distort", setShaderDistortion)    
+    dispatcher.map("/distort", setShaderDistortion)
+    dispatcher.map("/color", setColors)
+    dispatcher.map("/clean", toggleCleanBg)    
     ip = "127.0.0.1"
     port = 1337
     server = BlockingOSCUDPServer((ip, port), dispatcher)
@@ -634,7 +672,9 @@ class Player(mglw.WindowConfig):
 
         # postprocess triangle texture to currentframebuffer
         self.currentframe.use()
-        self.currentframe.clear(0.0, 0.0, 0.0)
+
+        if clean_background:
+        	self.currentframe.clear(0.0, 0.0, 0.0)
         # activate texture from the offscreen buffer
         # self.ctx.blend_func = self.ctx.SRC_ALPHA, self.ctx.ONE_MINUS_SRC_ALPHA
         # self.ctx.enable_only(moderngl.BLEND)

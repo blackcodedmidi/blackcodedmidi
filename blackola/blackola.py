@@ -24,7 +24,7 @@ LOOP_GLUE = True
 OPTIONS_SENDMIDI = True
 _midiport_ = None
 master_volume = 1.0
-
+release_on_update = True
 # well not really seconds, but if a note is the size of the height of the window, the start is 0 and the end is 1
 # is seconds is the movie2frame is set at 60bpm
 FRAMEHEIGHT_AS_SECONDS = 1
@@ -198,9 +198,40 @@ def parse_args(args=None, parser=None):
 # -----------------------------------------------------------------
 # -----------------------------------------------------------------
 # OSC stuff
+def setShaderDistortion(address, *args):
+	global uniform_distort
+	uniform_distort = float(args[0])
+
+def toggleCleanBg(address, *args):
+	global clean_background
+	
+	if int(args[0]) == 0:
+		clean_background = False
+	else:
+		clean_background = True
+
+def setRealeaseOnUpdate(address, *args):
+	global release_on_update
+
+	if int(args[0]) == 0:
+		release_on_update = False
+	else:
+		release_on_update = True
+
+def releaseAll(address, *args):
+	global NUMBER_OF_CHANNELS
+	global TOTAL_NOTES
+
+	for channel in range(NUMBER_OF_CHANNELS):
+		for note in range(TOTAL_NOTES):
+			channels_notes_isplaying[channel][note] = False
+			msg = mido.Message("note_off", channel=channel, note=note, velocity=0)
+			_midiport_.send(msg)
+
 def refreshSong(address, *args):
     global song
     global TOTAL_FRAMES
+    global release_on_update
 
     filename = f"{args[0]}.txt"
     f = open(os.path.join(os.path.dirname(__file__), "songs",filename), "r")
@@ -215,13 +246,9 @@ def refreshSong(address, *args):
 
     print(f"refresh: {filename}")
 
-def setShaderDistortion(address, *args):
-	global uniform_distort
-	uniform_distort = float(args[0])
+    if release_on_update:
+    	releaseAll("/panic")
 
-def toggleCleanBg(address, *args):
-	global clean_background
-	clean_background = not clean_background
 
 def setColors(address, *args):
 	global COLOR_DICTIONARY
@@ -287,7 +314,9 @@ def startServer():
     dispatcher.map("/master", setMasterVolume) 
     dispatcher.map("/distort", setShaderDistortion)
     dispatcher.map("/color", setColors)
-    dispatcher.map("/clean", toggleCleanBg)    
+    dispatcher.map("/clean", toggleCleanBg) 
+    dispatcher.map("/panic", releaseAll) 
+    dispatcher.map("/release", setRealeaseOnUpdate)  
     ip = "127.0.0.1"
     port = 1337
     server = BlockingOSCUDPServer((ip, port), dispatcher)

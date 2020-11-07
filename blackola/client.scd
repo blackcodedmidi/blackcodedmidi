@@ -72,7 +72,7 @@ o = NetAddr.new("127.0.0.1", 1337);
 //------------------------------------
 
 // control player speed. -100 to 100
-o.sendMsg("/speed", 1);
+o.sendMsg("/speed", 0);
 // second argument is tween-time between current speed and target speed
 o.sendMsg("/speed", 1, 4);
 // somewhat a master volume, from 0 to 1
@@ -85,18 +85,22 @@ o.sendMsg("/refresh", "chihuahua");
 o.sendMsg("/distort", 0);
 //set channel palette: 'rgb', 'hip', "1bit", 'cute', 'vapor', 'pure', 'cga', full list in blackola.py
 o.sendMsg("/color", 'pure');
-//toggle clean bg
-o.sendMsg("/clean");
+//toggle clean bg (0 for False, 1 for True)
+o.sendMsg("/clean", 1);
+// release ALL notes immediately
+o.sendMsg("/panic");
+// auto release ALL notes when updating song (0 for False, 1 for True)
+o.sendMsg("/release", 1);
 
 
 // create a new song and load it to the player
 (
 ~updateSong.({ |f, t, n|
 	var note, chan, dur, vel;
-	note = 50 + (f*3) + (sin(t/10)*5) + sin(t/3) + (sin(t/8)*20);
+	note = 50 + (f*3) + (sin(t/10)*5) + sin(t/3) + (sin(t/8)*2);
 	note = note + n;
-	chan = t;
-	dur = 10;
+	chan = 0;
+	dur = 0.5;
 	vel = 64;
 	[note, chan, dur, vel]
 }, 64, 64, 1);

@@ -581,11 +581,11 @@ class Player(mglw.WindowConfig):
         for piano_key in range(127):
             color = None
 
-            #--- paint keys of sounding channel. buggy af
-            # for channel_index in range(NUMBER_OF_CHANNELS):
-            #     current_channel = channels_notes_isplaying[channel_index]
-            #     if current_channel[piano_key] == True:
-            #         color = COLOR_CHANNELS[channel_index]
+            # paint keys of sounding channel
+            for channel_index in range(NUMBER_OF_CHANNELS):
+                current_channel = channels_notes_isplaying[channel_index]
+                if current_channel[piano_key] == True:
+                    color = COLOR_CHANNELS[channel_index % len(COLOR_CHANNELS)]
 
             if not color:
                 if BLACKS_PATTERN[piano_key % 12]:

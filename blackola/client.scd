@@ -5,7 +5,7 @@
 // create the NetAddr
 o = NetAddr.new("127.0.0.1", 1337);
 
-~maxChannels = 10;
+~maxChannels = 16;
 ~maxNotes = 127;
 
 // a function to write the song to file and send the refresh message
@@ -93,5 +93,5 @@ o.sendMsg("/refresh", "chihuahua");
 	dur = 10;
 	vel = 64;
 	[note, chan, dur, vel]
-}, 64, 64, 2);
+}, 64, 64, 1);
 )

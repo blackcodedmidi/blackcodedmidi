@@ -86,7 +86,11 @@ COLOR_CHANNELS = [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_WHITE]
 # ]
 
 # --
-# GL
+# shaders uniforms
+uniform_distort = 0.0
+
+
+
 
 
 def run_window_config(config_cls: mglw.WindowConfig,
@@ -186,6 +190,10 @@ def refreshSong(address, *args):
 
     print(f"refresh: {filename}")
 
+def setShaderDistortion(address, *args):
+	global uniform_distort
+	uniform_distort = float(args[0])
+
 
 def setTagetSpeed(address, *args):
     global player_speed
@@ -240,7 +248,8 @@ def startServer():
     dispatcher = Dispatcher()
     dispatcher.map("/refresh", refreshSong)
     dispatcher.map("/speed", setTagetSpeed)
-    dispatcher.map("/master", setMasterVolume)    
+    dispatcher.map("/master", setMasterVolume) 
+    dispatcher.map("/distort", setShaderDistortion)    
     ip = "127.0.0.1"
     port = 1337
     server = BlockingOSCUDPServer((ip, port), dispatcher)
@@ -354,7 +363,7 @@ class Player(mglw.WindowConfig):
 
             uniform sampler2D texture0;
             uniform sampler2D texture1;
-            uniform float time;
+            uniform float distort;
             out vec4 fragColor;
             in vec2 uv;
 
@@ -363,8 +372,8 @@ class Player(mglw.WindowConfig):
                 vec2 st = uv;
 
                 st -= 0.5;
-                st.x *= 1.05 - sin(uv.y*pi)*0.15;
-                st.y *= 1.00 - sin(uv.y*pi)*0.05;
+                st.x *= 1.0 - sin(uv.y*pi)*0.15*distort;
+                st.y *= 1.0 - sin(uv.y*pi)*0.05*distort;
                 st += 0.5;
 
                 vec4 currentFrame = texture(texture0, st);
@@ -400,8 +409,8 @@ class Player(mglw.WindowConfig):
             self.program_postprocess,
             [(screen_quad, '2f 2f', 'in_pos', 'in_uv')])
         #  MAKES SURE THE UNIFORM IS USED OR GET REMOVED WHEN THE SHADER IS COMPILED
-        # self.uniform_time = self.program_postprocess["time"]
-        # self.uniform_time.value = 1.0
+        self.uniform_distort = self.program_postprocess["distort"]
+        self.uniform_distort.value = 0.0
 
         self.program_simple = self.ctx.program(
             vertex_shader="""
@@ -444,6 +453,9 @@ class Player(mglw.WindowConfig):
         global player_speed_tweening
         global mouse_pos
         global master_volume
+        global uniform_distort
+
+        
 
         if (mouse_pos[0] < 80):
             player_speed = (mouse_pos[1] / WINDOW_SIZE[1]) * 100.2
@@ -630,6 +642,7 @@ class Player(mglw.WindowConfig):
         self.prevframe_texture.use(1)
         self.ctx.enable_only(moderngl.BLEND)
         # self.uniform_time.value = time
+        self.uniform_distort.value = uniform_distort
         self.vao_quad.render(mode=moderngl.TRIANGLE_STRIP)
 
         # render (TODO: its should just copy it) currentframe_texture to preframe buffer

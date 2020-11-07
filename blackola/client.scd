@@ -81,6 +81,8 @@ o.sendMsg("/master", 0.8);
 o.sendMsg("/refresh", "init");
 o.sendMsg("/refresh", "galaxian");
 o.sendMsg("/refresh", "chihuahua");
+// distort: 0 is none, 1 was the usual amount. It can be negative!
+o.sendMsg("/distort", 0);
 
 
 // create a new song and load it to the player

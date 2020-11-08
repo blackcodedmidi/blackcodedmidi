@@ -567,8 +567,8 @@ class Player(mglw.WindowConfig):
         for note in notes_to_check:
             # fail safe check, skip note if it has something weird
             if len(note) != 8:
-                print("-- FAIL -- ")
-                print(f"note: {note}")
+                # print("-- FAIL -- ")
+                # print(f"note: {note}")
                 continue
 
             # converting note's start and end values to screen's height porcentage

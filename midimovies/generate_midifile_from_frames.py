@@ -261,5 +261,5 @@ if __name__ == "__main__":
         framesfolder_name = sys.argv[1]
     except:
         framesfolder_name = "test-arrow"
-    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_frame=4, clone_song=1, output_midifile_name=framesfolder_name)
+    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_frame=1, clone_song=1, output_midifile_name=framesfolder_name)
     generate_list_from_midifile(framesfolder_name)

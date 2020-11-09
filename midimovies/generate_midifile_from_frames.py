@@ -89,7 +89,7 @@ def generate_list_from_midifile(midifile):
     f.close()
 
     print("DONE CONVERTING MIDIFILE")
-def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_name="output", nancarrow=True, clone_multiplier=1):
+def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_name="output", nancarrow=True, clone_song=1, clone_frame=1):
 
     MODE_NANCARROW = nancarrow
 
@@ -119,13 +119,15 @@ def generate_midifile_from_frames(framesfolder_name="test2", output_midifile_nam
     last_empty_rows_from_last_frame = 0
     frames_in_directory = os.listdir(PATH_FRAMES)
 
-    # clone_multiplier hack
+    # clone_song hack
     # the idea is to makes as there is more frames that they really are. 
     # its usefull for testing as let have only one png file in the frame folder, without triggering the "end of the pianoroll" every frame
     frames_to_process = []
-    for i in range(len(frames_in_directory) * clone_multiplier):
+    for i in range(len(frames_in_directory) * clone_song):
     	index = i % len(frames_in_directory)
-    	frames_to_process.append(frames_in_directory[index])
+
+    	for clone_hack in range(clone_frame):
+    		frames_to_process.append(frames_in_directory[index])
 
     print(frames_to_process)
 
@@ -258,6 +260,6 @@ if __name__ == "__main__":
     try:
         framesfolder_name = sys.argv[1]
     except:
-        framesfolder_name = "test-simple"
-    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_multiplier=1, output_midifile_name=framesfolder_name)
+        framesfolder_name = "test-arrow"
+    generate_midifile_from_frames(framesfolder_name, nancarrow=False, clone_frame=4, clone_song=1, output_midifile_name=framesfolder_name)
     generate_list_from_midifile(framesfolder_name)

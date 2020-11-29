@@ -19,7 +19,10 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 WINDOW_SIZE = (878, 600)
 mouse_pos = WINDOW_SIZE
 
-LOOP_GLUE = True
+LOOP_GLUE = False
+
+
+color_counter = 0
 
 OPTIONS_SENDMIDI = True
 _midiport_ = None
@@ -83,6 +86,7 @@ COLOR_DICTIONARY =	{
 	'rgbw': [COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_WHITE],
 	'rgb': [COLOR_RED, COLOR_GREEN, COLOR_BLUE],
 	'1bit': [COLOR_WHITE],
+	'grey': color_from_hex(["ffffff","ffffff","aaaaaa","555555","222222","111111"]),
 	'steven': color_from_hex(["f72585","7209b7","3a0ca3","4361ee","4cc9f0"]),
 	'paleta': color_from_hex(["e63946","f1faee","a8dadc","457b9d","1d3557"]),
 	'cute': color_from_hex(["ff595e","ffca3a","8ac926","1982c4","6a4c93"]),
@@ -521,6 +525,7 @@ class Player(mglw.WindowConfig):
         global mouse_pos
         global master_volume
         global uniform_distort
+        global color_counter
 
         
 
@@ -564,12 +569,17 @@ class Player(mglw.WindowConfig):
         notes_to_check += song[(position_in_frames) % len(song)]
         notes_to_check += song[(position_in_frames + 1) % len(song)]
 
+        color_counter += 0.25
+
         for note in notes_to_check:
             # fail safe check, skip note if it has something weird
             if len(note) != 8:
                 # print("-- FAIL -- ")
                 # print(f"note: {note}")
                 continue
+
+            if note[4] > note[5]:
+            	continue
 
             # converting note's start and end values to screen's height porcentage
             # [frame_index, channel, note, velocity, start, end, false, false]
@@ -598,7 +608,7 @@ class Player(mglw.WindowConfig):
 
                 for i in range(6):
                     colors = np.append(
-                        colors, COLOR_CHANNELS[note[1] % len(COLOR_CHANNELS)])
+                        colors, COLOR_CHANNELS[(note[1]+int(note[0])) % len(COLOR_CHANNELS)])
                 vertices = np.append(vertices, rect(x, y, w, h))
 
             #----- SEND MIDI
@@ -681,7 +691,8 @@ class Player(mglw.WindowConfig):
                         (BARGFX_WIDTH + BARGFX_MARGIN)), int(0), BARGFX_WIDTH,
                     SOUND_TRIGGER_ZONE))
 
-        # this appears to need to be updated every frame
+        
+        # TODO: this appears to need to be updated every frame, kinda cursed create a new one every time. (there are release at the end of the frame)
         self.vbo1 = self.ctx.buffer(vertices.astype('f4').tobytes())
         self.vbo2 = self.ctx.buffer(colors.astype('f4').tobytes())
         self.vao = self.ctx.vertex_array(self.prog_basictriangles, [
@@ -727,6 +738,12 @@ class Player(mglw.WindowConfig):
         self.currentframe_texture.use(0)
         self.ctx.enable_only(moderngl.BLEND)
         self.vao_simple.render(mode=moderngl.TRIANGLE_STRIP)
+
+	    # release buffers and vertex array or a gigantic memory leak happen
+	    # TODO: this are released, becouse a new one is created at the start of the frame. seems like a bad idea.
+        self.vbo1.release()
+        self.vbo2.release()
+        self.vao.release()
 
 
 # -----------------------------------------------------------------

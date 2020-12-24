@@ -24,6 +24,9 @@ LOOP_GLUE = False
 
 color_counter = 0
 
+refreshAsked = False
+song_name = "init"
+
 OPTIONS_SENDMIDI = True
 _midiport_ = None
 master_volume = 1.0
@@ -233,9 +236,19 @@ def releaseAll(address, *args):
 			_midiport_.send(msg)
 
 def refreshSong(address, *args):
+    global refreshAsked
+    global song_name
+
+    song_name = str(args[0])
+    refreshAsked = True
+
+
+def initFirstSong(address, *args):
     global song
     global TOTAL_FRAMES
     global release_on_update
+
+    
 
     filename = f"{args[0]}.txt"
     f = open(os.path.join(os.path.dirname(__file__), "songs",filename), "r")
@@ -251,7 +264,7 @@ def refreshSong(address, *args):
     print(f"refresh: {filename}")
 
     if release_on_update:
-    	releaseAll("/panic")
+      releaseAll("/panic")
 
 
 def setColors(address, *args):
@@ -311,6 +324,7 @@ def tweenSpeed(frametime):
 
     return player_speed
 
+# this will be a new thread
 def startServer():
     dispatcher = Dispatcher()
     dispatcher.map("/refresh", refreshSong)
@@ -325,6 +339,40 @@ def startServer():
     port = 1337
     server = BlockingOSCUDPServer((ip, port), dispatcher)
     server.serve_forever()  # Blocks forever
+
+# this will be a new thread
+# the main idea was to to reduce the freeze time when the song is refreshed/parsed, or even that this was independant from the pianola update, so notes don't get frozen while this happen.
+def startSongParser():
+    global song
+    global TOTAL_FRAMES
+    global release_on_update
+    global refreshAsked    
+    global song_name
+
+    while True:
+        if refreshAsked:
+            refreshAsked = False
+            filename = f"{song_name}.txt"
+            f = open(os.path.join(os.path.dirname(__file__), "songs",filename), "r")
+            temp_song = f.read()
+            f.close()
+
+            temp_song = ast.literal_eval(temp_song)
+
+            TEMP_TOTAL_FRAMES = len(temp_song)
+            if LOOP_GLUE:
+                temp_song = duplicateFirstFrameAtTheEnd(temp_song)
+
+            print(f"refresh: {filename}")
+
+            #actually update the global variables
+            TOTAL_FRAMES = TEMP_TOTAL_FRAMES
+            song = temp_song
+
+            if release_on_update:
+                releaseAll("/panic")
+        time.sleep(0.05)
+    
 
 
 # -----------------------------------------------------------------
@@ -364,6 +412,8 @@ class Player(mglw.WindowConfig):
     title = "Blackola-GL"
     window_size = WINDOW_SIZE
     aspect_ratio = WINDOW_SIZE[0] / WINDOW_SIZE[1]
+    resizable = True
+    aspect_ratio = None # Seting to None make it fit any window size and ratio
     scroller_y = 0
 
     def __init__(self, **kwargs):
@@ -765,10 +815,11 @@ def openMidiPort(output_device=""):
 # ----------------------------------------------------------
 def start_player(midifile=None, output_device=None, mglw_args=None):
     threading.Thread(target=startServer, daemon=True).start()
+    threading.Thread(target=startSongParser, daemon=True).start()
 
     openMidiPort(output_device)
 
-    refreshSong("/refresh", "init")
+    initFirstSong("/refresh", "init")
     run_window_config(Player, args=mglw_args)
 
 
